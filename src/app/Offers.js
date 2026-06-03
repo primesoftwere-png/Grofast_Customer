@@ -15,7 +15,7 @@ export default function OffersPage() {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
 
-    alert("Coupon code copied!");
+    toast.success("Coupon code copied!");
 
     setTimeout(() => setCopiedCode(null), 2000);
   };

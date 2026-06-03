@@ -75,11 +75,11 @@ export default function OTPVerification() {
 
     if (code.length === 6) {
       setIsVerified(true);
-      alert("Phone verified successfully!");
+      toast.success("Phone verified successfully!");
 
       setTimeout(() => router.push("/"), 2000);
     } else {
-      alert("Invalid OTP");
+      toast.error("Invalid OTP");
     }
 
     setIsLoading(false);
@@ -87,7 +87,7 @@ export default function OTPVerification() {
 
   const handleResend = () => {
     setResendTimer(30);
-    alert("OTP sent again!");
+    toast.success("OTP sent again!");
   };
 
   // ================= VERIFIED =================

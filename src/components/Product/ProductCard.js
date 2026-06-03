@@ -5,12 +5,16 @@ import { Plus, Minus, Star } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 export default function ProductCard({ product }) {
-  const { addItem, updateQuantity, getItemQuantity } = useCart();
+  const { addItem, decreaseItem, getItemQuantity } = useCart();
 
   // Handle product ID - normalize it
   const productId = String(product._id || product.id).trim();
   const quantity = getItemQuantity(productId);
   
+  // Stock limit from API
+  const stock = product.productQuantity || product.stock || 0;
+  const isStockLimitReached = stock > 0 && quantity >= stock;
+  const isOutOfStock = stock === 0;
 
 
   // Map API fields to component fields
@@ -26,7 +30,13 @@ export default function ProductCard({ product }) {
     category: product.productCategory?.categoryName || product.category?.name || product.category,
   };
 
-  const handleAddToCart = (e) => {
+  const handleDecrease = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    decreaseItem(productId);
+  };
+
+  const handleIncrease = (e) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -52,12 +62,6 @@ export default function ProductCard({ product }) {
     addItem(completeProduct);
   };
 
-  const handleUpdateQuantity = (e, newQuantity) => {
-    e.preventDefault();
-    e.stopPropagation();
-    updateQuantity(productId, newQuantity);
-  };
-
   // Handle image URL - construct full URL if needed
   const getImageUrl = (imagePath) => {
     if (!imagePath) return '/placeholder-product.svg';
@@ -73,8 +77,17 @@ export default function ProductCard({ product }) {
 
   return (
     <Link href={`/product/${productId}`} className="block">
-      <article className="group relative bg-card border border-border rounded-xl p-3 hover:shadow-card-lg transition-all">
+      <article className={`group relative bg-card border border-border rounded-xl p-3 transition-all ${isOutOfStock ? 'opacity-60' : 'hover:shadow-card-lg'}`}>
         
+        {/* Out of Stock Overlay */}
+        {isOutOfStock && (
+          <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] rounded-xl z-20 flex items-center justify-center pointer-events-none">
+            <span className="bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+              Out of Stock
+            </span>
+          </div>
+        )}
+
         {/* Best Seller Badge */}
         {productData.rating >= 4 && (
           <span className="absolute top-2 left-2 px-2 py-0.5 bg-primary text-primary-foreground text-xs font-semibold rounded-full z-10">
@@ -87,7 +100,7 @@ export default function ProductCard({ product }) {
           <img
             src={imageUrl}
             alt={productData.name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className={`w-full h-full object-cover transition-transform duration-300 ${isOutOfStock ? '' : 'group-hover:scale-105'}`}
             loading="lazy"
             onError={(e) => {
               e.target.onerror = null; // Prevent infinite loop
@@ -119,45 +132,54 @@ export default function ProductCard({ product }) {
           </div>
 
           {/* Price + Cart */}
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-1 sm:gap-2 mt-auto flex-wrap">
             
             {/* Price */}
             <div className="flex items-baseline gap-1.5">
-              <span className="font-bold text-base">
+              <span className="font-bold text-sm sm:text-base">
                 ₹{typeof productData.price === 'number' ? productData.price.toFixed(2) : productData.price}
               </span>
             </div>
 
             {/* Cart Buttons */}
-            {quantity === 0 ? (
+            {isOutOfStock ? (
               <button
-                onClick={handleAddToCart}
-                className="bg-primary text-primary-foreground p-2 rounded-md hover:opacity-90 transition"
+                disabled
+                className="bg-muted text-muted-foreground p-1.5 sm:p-2 rounded-md opacity-50 cursor-not-allowed shrink-0"
+                aria-label="Out of stock"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            ) : quantity === 0 ? (
+              <button
+                onClick={handleIncrease}
+                className="bg-primary text-primary-foreground p-1.5 sm:p-2 rounded-md hover:opacity-90 transition shrink-0"
                 aria-label={`Add ${productData.name} to cart`}
               >
                 <Plus className="w-4 h-4" />
               </button>
             ) : (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                 
                 <button
-                  onClick={(e) => handleUpdateQuantity(e, quantity - 1)}
-                  className="bg-muted px-2 py-1 rounded-md hover:bg-muted/80"
+                  onClick={handleDecrease}
+                  className="bg-muted px-1.5 sm:px-2 py-1 rounded-md hover:bg-muted/80"
                   aria-label="Decrease quantity"
                 >
-                  <Minus className="w-3 h-3" />
+                  <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
 
-                <span className="w-6 text-center text-sm font-semibold">
+                <span className="w-4 sm:w-6 text-center text-xs sm:text-sm font-semibold">
                   {quantity}
                 </span>
 
                 <button
-                  onClick={(e) => handleUpdateQuantity(e, quantity + 1)}
-                  className="bg-muted px-2 py-1 rounded-md hover:bg-muted/80"
+                  onClick={handleIncrease}
+                  disabled={isStockLimitReached}
+                  className={`px-1.5 sm:px-2 py-1 rounded-md ${isStockLimitReached ? 'bg-muted/50 opacity-50 cursor-not-allowed' : 'bg-muted hover:bg-muted/80'}`}
                   aria-label="Increase quantity"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
               </div>
             )}

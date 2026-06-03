@@ -33,12 +33,12 @@ export default function UpdateProfile() {
     await new Promise((r) => setTimeout(r, 1500));
     setIsLoading(false);
 
-    alert("Profile updated successfully!");
+    toast.success("Profile updated successfully!");
     router.push("/profile");
   };
 
   const handleAvatarChange = () => {
-    alert("Avatar upload feature coming soon!");
+    toast.success("Avatar upload feature coming soon!");
   };
 
   return (

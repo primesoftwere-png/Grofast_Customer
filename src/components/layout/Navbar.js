@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 import {
   MapPin,
   Search,
@@ -17,6 +16,9 @@ import {
   Package,
 } from "lucide-react";
 import { authAPI } from "@/lib/api";
+import { useCart } from "@/context/CartContext";
+import { addressAPI } from "@/services/address.api";
+import AddressSelectionModal from "@/components/Cart/AddressSelectionModal";
 
 export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,18 +26,70 @@ export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [currentAddress, setCurrentAddress] = useState("Select Address");
+  const [currentAddressId, setCurrentAddressId] = useState(null);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
-  const totalItems = 2; // Replace with actual cart count
+  const { totalItems } = useCart();
 
   const router = useRouter();
 
   // Check authentication status on mount and when localStorage changes
   useEffect(() => {
+    const fetchAddress = async (userData) => {
+      try {
+        if (!userData) return;
+        const userId = userData._id || userData.id;
+        
+        const savedAddressId = localStorage.getItem("deliveryAddressId");
+        if (savedAddressId) {
+          setCurrentAddressId(savedAddressId);
+        }
+
+        // Check localStorage first
+        const savedAddress = localStorage.getItem("deliveryAddress");
+        if (savedAddress) {
+          const parsed = JSON.parse(savedAddress);
+          if (parsed.city || parsed.addressLine1) {
+            setCurrentAddress(`${parsed.city || ''} ${parsed.pincode || ''}`.trim() || "Delivery Address Set");
+            return;
+          }
+        }
+
+        // Otherwise fetch default from API
+        try {
+          const defaultRes = await addressAPI.getDefaultAddress(userId);
+          if (defaultRes?.data) {
+            setCurrentAddressId(defaultRes.data._id || defaultRes.data.id);
+            setCurrentAddress(`${defaultRes.data.city || ''} ${defaultRes.data.pincode || ''}`.trim() || "Delivery Address Set");
+            return;
+          }
+        } catch (e) {
+          // Ignore, fallback to user addresses
+        }
+
+        const addressesRes = await addressAPI.getUserAddresses(userId);
+        if (addressesRes?.data && addressesRes.data.length > 0) {
+          const addr = addressesRes.data[0];
+          setCurrentAddressId(addr._id || addr.id);
+          setCurrentAddress(`${addr.city || ''} ${addr.pincode || ''}`.trim() || "Delivery Address Set");
+        }
+      } catch (error) {
+        console.error("Error fetching address for navbar:", error);
+      }
+    };
+
     const checkAuth = () => {
       const authenticated = authAPI.isAuthenticated();
       const userData = authAPI.getCurrentUser();
       setIsLoggedIn(authenticated);
       setUser(userData);
+      
+      if (authenticated && userData) {
+        fetchAddress(userData);
+      } else {
+        setCurrentAddress("Select Address");
+      }
     };
 
     checkAuth();
@@ -100,29 +154,52 @@ export default function Navbar() {
       <div className="container mx-auto">
         
         {/* Top bar */}
-        <div className="flex items-center justify-between py-2 px-1 border-b border-primary-foreground/10">
+        <div className="flex items-center justify-between py-2 px-2 sm:px-4 border-b border-primary-foreground/10 gap-2 overflow-hidden">
           
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-background rounded-lg flex items-center justify-center">
-              <span className="text-lg font-bold text-primary">G</span>
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 relative flex items-center justify-center">
+              <img 
+                src="Grofast.png" 
+                alt="GroFast Logo" 
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextElementSibling.style.display = 'flex';
+                }}
+              />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-background rounded-lg hidden items-center justify-center">
+                <span className="text-lg sm:text-xl font-bold text-primary">G</span>
+              </div>
             </div>
             <span className="font-bold text-lg text-primary-foreground hidden sm:block">
               GroFast
             </span>
           </Link>
 
-          <button className="flex items-center gap-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-lg px-3 py-1.5 transition-colors">
-            <MapPin className="w-4 h-4" />
-            <div className="text-left">
-              <p className="text-xs opacity-80">Deliver to</p>
-              <p className="text-sm font-medium truncate max-w-[150px] sm:max-w-[200px]">
-                123 Main Street, NYC
+          {/* Address Button */}
+          <button 
+            onClick={() => {
+              if (isLoggedIn) {
+                setIsAddressModalOpen(true);
+              } else {
+                router.push("/auth");
+              }
+            }}
+            className="flex items-center gap-1.5 sm:gap-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-lg px-2 sm:px-3 py-1.5 transition-colors text-left min-w-0 shrink"
+          >
+            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <div className="text-left min-w-0">
+              <p className="text-[10px] sm:text-xs opacity-80 leading-tight">Deliver to</p>
+              <p className="text-xs sm:text-sm font-medium truncate max-w-[100px] sm:max-w-[200px]">
+                {currentAddress}
               </p>
             </div>
           </button>
 
-          <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-1 text-primary-foreground text-sm bg-primary-foreground/10 rounded-lg px-3 py-1.5">
+          {/* Right side actions */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="hidden md:flex items-center gap-1 text-primary-foreground text-sm bg-primary-foreground/10 rounded-lg px-3 py-1.5">
               <Clock className="w-4 h-4" />
               <span>15-20 min</span>
             </div>
@@ -132,35 +209,49 @@ export default function Navbar() {
               <div className="hidden sm:block relative">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 font-semibold bg-secondary text-secondary-foreground px-3 py-1.5 rounded-md hover:bg-secondary/90 transition-colors"
+                  className="flex items-center gap-2.5 bg-white/10 hover:bg-white/25 text-white px-3 py-1.5 rounded-full transition-all duration-300 border border-white/20 shadow-sm hover:scale-105 active:scale-95 transform"
                 >
-                  <User className="w-4 h-4" />
-                  <span className="max-w-[100px] truncate">{user?.name || 'User'}</span>
+                  <div className="w-7 h-7 bg-white text-primary rounded-full flex items-center justify-center font-bold text-sm">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <span className="font-semibold text-sm max-w-[100px] truncate">{user?.name?.split(' ')[0] || 'User'}</span>
                 </button>
 
                 {/* User Dropdown */}
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
+                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-2xl py-2 z-50 border border-gray-100 transform origin-top-right transition-all duration-200 animate-in fade-in zoom-in-95">
+                    <div className="px-4 py-3 border-b border-gray-50 mb-2">
+                       <p className="text-sm font-semibold text-gray-800 truncate">{user?.name || 'User'}</p>
+                       <p className="text-xs text-gray-500 truncate">{user?.email || ''}</p>
+                    </div>
                     <Link
                       href="/profile"
                       onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-gray-700"
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium hover:translate-x-1"
                     >
-                      <User className="w-4 h-4" />
+                      <User className="w-4 h-4 text-primary" />
                       Profile
                     </Link>
                     <Link
                       href="/orders"
                       onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-gray-700"
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium hover:translate-x-1"
                     >
-                      <Package className="w-4 h-4" />
+                      <Package className="w-4 h-4 text-primary" />
                       Orders
                     </Link>
-                    <hr className="my-1" />
+                    <Link
+                      href="/profile"
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium hover:translate-x-1"
+                    >
+                      <Settings className="w-4 h-4 text-primary" />
+                      Settings
+                    </Link>
+                    <div className="h-px bg-gray-100 my-2" />
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-red-600"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 text-red-600 transition-colors text-sm font-medium hover:translate-x-1"
                     >
                       <LogOut className="w-4 h-4" />
                       Logout
@@ -170,8 +261,9 @@ export default function Navbar() {
               </div>
             ) : (
               <Link href="/auth">
-                <button className="hidden sm:flex items-center gap-1 font-semibold bg-secondary text-secondary-foreground px-3 py-1.5 rounded-md hover:bg-secondary/90 transition-colors">
-                  <LogIn className="w-4 h-4" /> Login
+                <button className="hidden sm:flex items-center gap-2 font-semibold bg-white text-primary px-5 py-2 rounded-full hover:bg-gray-50 transition-all duration-300 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:scale-105 active:scale-95 active:translate-y-0 transform">
+                  <LogIn className="w-4 h-4" /> 
+                  <span>Login</span>
                 </button>
               </Link>
             )}
@@ -179,12 +271,12 @@ export default function Navbar() {
         </div>
 
         {/* Main navbar */}
-        <div className="flex items-center gap-3 py-3 px-1">
+        <div className="flex items-center gap-2 sm:gap-3 py-2.5 sm:py-3 px-2 sm:px-4">
           
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(true)}
-            className="lg:hidden text-primary-foreground hover:bg-primary-foreground/10 p-2 rounded"
+            className="lg:hidden text-primary-foreground hover:bg-primary-foreground/10 p-1.5 sm:p-2 rounded shrink-0"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -192,18 +284,18 @@ export default function Navbar() {
           {/* Mobile Sidebar */}
           {isMenuOpen && (
             <div className="fixed inset-0 z-50 flex">
-              <div className="w-72 bg-white h-full p-4 shadow-lg overflow-y-auto">
+              <div className="w-72 max-w-[80vw] bg-white h-full p-4 shadow-lg overflow-y-auto">
                 
                 {/* User Info */}
                 {isLoggedIn && user && (
                   <div className="mb-4 p-4 bg-primary/10 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+                      <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center shrink-0">
                         <User className="w-6 h-6 text-white" />
                       </div>
-                      <div>
-                        <p className="font-semibold text-gray-800">{user.name}</p>
-                        <p className="text-sm text-gray-600">{user.email}</p>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-800 truncate">{user.name}</p>
+                        <p className="text-sm text-gray-600 truncate">{user.email}</p>
                       </div>
                     </div>
                   </div>
@@ -231,7 +323,7 @@ export default function Navbar() {
                         const Icon = item.icon;
                         return (
                           <Link
-                            key={item.path}
+                            key={item.path + item.label}
                             href={item.path}
                             onClick={() => setIsMenuOpen(false)}
                             className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100"
@@ -276,15 +368,15 @@ export default function Navbar() {
           )}
 
           {/* Search */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-xl">
+          <form onSubmit={handleSearch} className="flex-1 min-w-0">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search for groceries, essentials..."
+                placeholder="Search groceries..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-background rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-background/50"
+                className="w-full bg-background rounded-xl pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-background/50"
               />
             </div>
           </form>
@@ -311,13 +403,13 @@ export default function Navbar() {
           </nav>
 
           {/* Cart */}
-          <Link href="/cart" className="relative">
-            <button className="text-primary-foreground hover:bg-primary-foreground/10 p-2 rounded relative">
+          <Link href="/cart" className="relative shrink-0">
+            <button className="text-primary-foreground hover:bg-primary-foreground/10 p-1.5 sm:p-2 rounded relative">
               <ShoppingCart className="w-5 h-5" />
 
               {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-secondary text-xs font-bold rounded-full flex items-center justify-center text-secondary-foreground">
-                  {totalItems}
+                <span className="absolute -top-1 -right-1 min-w-[18px] sm:min-w-[20px] h-[18px] sm:h-5 bg-secondary text-[10px] sm:text-xs font-bold rounded-full flex items-center justify-center text-secondary-foreground px-1 sm:px-1.5 shadow-md">
+                  {totalItems > 99 ? '99+' : totalItems}
                 </span>
               )}
             </button>
@@ -325,14 +417,14 @@ export default function Navbar() {
 
           {/* Mobile Auth Icon */}
           {isLoggedIn ? (
-            <Link href="/profile" className="sm:hidden">
-              <button className="text-primary-foreground hover:bg-primary-foreground/10 p-2 rounded">
+            <Link href="/profile" className="sm:hidden shrink-0">
+              <button className="text-primary-foreground hover:bg-primary-foreground/10 p-1.5 rounded">
                 <User className="w-5 h-5" />
               </button>
             </Link>
           ) : (
-            <Link href="/auth" className="sm:hidden">
-              <button className="text-primary-foreground hover:bg-primary-foreground/10 p-2 rounded">
+            <Link href="/auth" className="sm:hidden shrink-0">
+              <button className="text-primary-foreground hover:bg-primary-foreground/10 p-1.5 rounded">
                 <LogIn className="w-5 h-5" />
               </button>
             </Link>
@@ -347,6 +439,18 @@ export default function Navbar() {
           onClick={() => setShowUserMenu(false)}
         />
       )}
+
+      {/* Global Address Selection Modal */}
+      <AddressSelectionModal
+        isOpen={isAddressModalOpen}
+        onClose={() => setIsAddressModalOpen(false)}
+        userId={user?._id || user?.id}
+        currentAddressId={currentAddressId}
+        onSelect={(addr) => {
+          setCurrentAddress(`${addr.city || ''} ${addr.pincode || ''}`.trim() || "Delivery Address Set");
+          setCurrentAddressId(addr._id || addr.id);
+        }}
+      />
     </header>
   );
 }

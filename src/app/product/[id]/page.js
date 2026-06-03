@@ -18,7 +18,7 @@ export default function ProductDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { addItem, updateQuantity, getItemQuantity } = useCart();
+  const { addItem, decreaseItem, removeItem, getItemQuantity } = useCart();
   const quantity = product ? getItemQuantity(product._id || product.id) : 0;
 
   // Fetch product details
@@ -316,12 +316,7 @@ export default function ProductDetails() {
                 <div className="flex gap-3 items-center">
                   
                   <button
-                    onClick={() =>
-                      updateQuantity(
-                        productId,
-                        Math.max(0, quantity - 1)
-                      )
-                    }
+                    onClick={() => decreaseItem(productId)}
                     disabled={quantity === 0}
                     className="border border-border p-2 rounded hover:bg-background transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -331,15 +326,8 @@ export default function ProductDetails() {
                   <span className="w-8 text-center font-semibold">{quantity}</span>
 
                   <button
-                    onClick={() =>
-                      quantity === 0
-                        ? addItem(product)
-                        : updateQuantity(
-                            productId,
-                            quantity + 1
-                          )
-                    }
-                    disabled={productStock === 0}
+                    onClick={() => addItem(product)}
+                    disabled={productStock === 0 || (productStock > 0 && quantity >= productStock)}
                     className="border border-border p-2 rounded hover:bg-background transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-4 h-4" />
@@ -348,12 +336,22 @@ export default function ProductDetails() {
                 </div>
               </div>
 
+              {productStock > 0 && quantity >= productStock && (
+                <p className="text-sm text-orange-500 text-center font-medium">
+                  Maximum stock limit reached ({productStock} items)
+                </p>
+              )}
+
               <button
                 onClick={() => addItem(product)}
-                disabled={productStock === 0}
+                disabled={productStock === 0 || (productStock > 0 && quantity >= productStock)}
                 className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {productStock === 0 ? 'Out of Stock' : `Add to Cart - ₹${(productPrice * Math.max(1, quantity)).toFixed(2)}`}
+                {productStock === 0 
+                  ? 'Out of Stock' 
+                  : (productStock > 0 && quantity >= productStock)
+                    ? 'Max Stock Reached'
+                    : `Add to Cart - ₹${(productPrice * Math.max(1, quantity)).toFixed(2)}`}
               </button>
 
             </div>

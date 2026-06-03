@@ -10,6 +10,9 @@ const apiClient = axios.create({
   headers: API_CONFIG.HEADERS
 });
 
+// Flag to prevent multiple simultaneous redirects
+let isRedirecting = false;
+
 // Request interceptor - Add auth token to all requests
 apiClient.interceptors.request.use(
   (config) => {
@@ -62,12 +65,26 @@ apiClient.interceptors.response.use(
       
       // Handle 401 Unauthorized - redirect to login
       if (status === 401) {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          // Only redirect if not already on auth page
-          if (!window.location.pathname.includes('/auth')) {
-            window.location.href = '/auth';
+        if (typeof window !== 'undefined' && !isRedirecting) {
+          const currentPath = window.location.pathname;
+          // Only clear storage and redirect if not already on auth-related pages
+          const authPages = ['/auth', '/login', '/register', '/forgot-password', '/otp-verification'];
+          const isOnAuthPage = authPages.some(page => currentPath.includes(page));
+          
+          if (!isOnAuthPage) {
+            console.log('🔒 Unauthorized - redirecting to login');
+            isRedirecting = true;
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            // Use setTimeout to avoid redirect loops
+            setTimeout(() => {
+              window.location.href = '/auth';
+            }, 100);
+          } else {
+            // If already on auth page, just clear storage without redirect
+            console.log('🔒 Unauthorized on auth page - clearing storage only');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
           }
         }
       }

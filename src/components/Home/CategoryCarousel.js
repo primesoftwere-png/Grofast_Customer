@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { productAPI } from "@/services";
@@ -11,11 +11,7 @@ export default function CategoryCarousel({ categoryName, icon }) {
   const [categoryProducts, setCategoryProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchCategoryProducts();
-  }, [categoryName]);
-
-  const fetchCategoryProducts = async () => {
+  const fetchCategoryProducts = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -64,7 +60,11 @@ export default function CategoryCarousel({ categoryName, icon }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [categoryName]);
+
+  useEffect(() => {
+    fetchCategoryProducts();
+  }, [fetchCategoryProducts]);
 
   const scroll = (direction) => {
     if (scrollRef.current) {

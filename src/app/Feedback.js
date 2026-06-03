@@ -30,7 +30,7 @@ export default function Feedback() {
 
   const handleSubmit = async () => {
     if (ratings.overall === 0) {
-      alert("Please rate your experience");
+      toast.error("Please rate your experience");
       return;
     }
 
@@ -39,7 +39,7 @@ export default function Feedback() {
     setIsLoading(false);
     setIsSubmitted(true);
 
-    alert("Thanks for feedback!");
+    toast.success("Thanks for feedback!");
   };
 
   const StarRating = ({ value, onChange, size = "sm" }) => (

@@ -36,6 +36,24 @@ export const orderAPI = {
   },
 
   /**
+   * Get recent order for user
+   * @param {string} userId - User ID
+   * @returns {Promise} Recent order details
+   */
+  getRecent: async (userId) => {
+    return await apiClient.get(API_ENDPOINTS.ORDERS.RECENT(userId));
+  },
+
+  /**
+   * Get categorized orders (recent & history) for a user
+   * @param {string} userId - User ID
+   * @returns {Promise} Categorized orders { recent, history }
+   */
+  getCategorized: async (userId) => {
+    return await apiClient.get(API_ENDPOINTS.ORDERS.CATEGORIZED(userId));
+  },
+
+  /**
    * Cancel an order
    * @param {string} orderId - Order ID
    * @param {Object} data - Cancellation reason, etc.
@@ -61,5 +79,14 @@ export const orderAPI = {
    */
   reorder: async (orderId) => {
     return await apiClient.post(API_ENDPOINTS.ORDERS.REORDER(orderId));
+  },
+
+  /**
+   * Convert cart to order
+   * @param {Object} data - Order data (userId, deliveryAddressId, paymentMethod)
+   * @returns {Promise} Created order from cart
+   */
+  convertCartToOrder: async (data) => {
+    return await apiClient.post(API_ENDPOINTS.ORDERS.CONVERT_CART_TO_ORDER, data);
   }
 };

@@ -26,17 +26,17 @@ export default function ChangePassword() {
     e.preventDefault();
 
     if (newPassword !== confirmPassword) {
-      alert("New passwords do not match");
+      toast.error("New passwords do not match");
       return;
     }
 
     if (newPassword.length < 6) {
-      alert("Password must be at least 6 characters");
+      toast.error("Password must be at least 6 characters");
       return;
     }
 
     if (newPassword === currentPassword) {
-      alert("New password must be different from current password");
+      toast.error("New password must be different from current password");
       return;
     }
 
@@ -44,7 +44,7 @@ export default function ChangePassword() {
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setIsLoading(false);
 
-    alert("Password changed successfully!");
+    toast.success("Password changed successfully!");
     router.push("/profile");
   };
 

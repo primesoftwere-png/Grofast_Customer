@@ -2,6 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { X, MapPin, Navigation, Loader2 } from "lucide-react";
+import dynamic from 'next/dynamic';
+
+const LocationPicker = dynamic(() => import('./LocationPicker'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[200px] bg-muted rounded-xl flex items-center justify-center border border-border">
+      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+    </div>
+  )
+});
 
 export default function AddressModal({ isOpen, onClose, onSave, currentAddress }) {
   const [formData, setFormData] = useState({
@@ -10,8 +20,11 @@ export default function AddressModal({ isOpen, onClose, onSave, currentAddress }
     addressLine1: "",
     city: "",
     state: "",
-    pincode: ""
+    pincode: "",
+    addressType: "home",
+    isDefault: false
   });
+  const [mapLocation, setMapLocation] = useState(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -27,8 +40,16 @@ export default function AddressModal({ isOpen, onClose, onSave, currentAddress }
           addressLine1: currentAddress.addressLine1 || "",
           city: currentAddress.city || "",
           state: currentAddress.state || "",
-          pincode: currentAddress.pincode || ""
+          pincode: currentAddress.pincode || "",
+          addressType: currentAddress.addressType || "home",
+          isDefault: currentAddress.isDefault || false
         });
+        if (currentAddress.latitude && currentAddress.longitude) {
+          setMapLocation({ lat: currentAddress.latitude, lng: currentAddress.longitude });
+        } else {
+          setMapLocation(null);
+          getCurrentLocation();
+        }
       } else {
         // Reset form
         setFormData({
@@ -37,8 +58,12 @@ export default function AddressModal({ isOpen, onClose, onSave, currentAddress }
           addressLine1: "",
           city: "",
           state: "",
-          pincode: ""
+          pincode: "",
+          addressType: "home",
+          isDefault: false
         });
+        setMapLocation(null);
+        getCurrentLocation();
       }
       setError("");
     }
@@ -65,10 +90,9 @@ export default function AddressModal({ isOpen, onClose, onSave, currentAddress }
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
+        setMapLocation({ lat: latitude, lng: longitude });
         
         try {
-          // Use reverse geocoding to get address from coordinates
-          // Using OpenStreetMap Nominatim API (free, no API key required)
           const response = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
           );
@@ -77,16 +101,13 @@ export default function AddressModal({ isOpen, onClose, onSave, currentAddress }
             const data = await response.json();
             const address = data.address;
             
-            // Extract address components
             setFormData(prev => ({
               ...prev,
               addressLine1: data.display_name || "",
-              city: address.city || address.town || address.village || "",
+            city: address.city || address.town || address.village || address.state_district || address.county || address.suburb || "",
               state: address.state || "",
               pincode: address.postcode || ""
             }));
-            
-            console.log("✅ Location fetched:", data);
           } else {
             setError("Failed to fetch address from location");
           }
@@ -122,6 +143,39 @@ export default function AddressModal({ isOpen, onClose, onSave, currentAddress }
       }
     );
   };
+
+  // Reverse geocode when user clicks on map manually
+  useEffect(() => {
+    const fetchAddressFromMapClick = async () => {
+      if (!mapLocation || isLoadingLocation) return;
+      
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${mapLocation.lat}&lon=${mapLocation.lng}&addressdetails=1`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          const address = data.address;
+          
+          setFormData(prev => ({
+            ...prev,
+            addressLine1: data.display_name || "",
+            city: address.city || address.town || address.village || address.state_district || address.county || address.suburb || "",
+            state: address.state || "",
+            pincode: address.postcode || ""
+          }));
+        }
+      } catch (error) {
+        console.error("Error reverse geocoding from map click:", error);
+      }
+    };
+    
+    // Only run if not already loading via 'getCurrentLocation' button
+    if (!isLoadingLocation) {
+      fetchAddressFromMapClick();
+    }
+  }, [mapLocation]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -168,10 +222,20 @@ export default function AddressModal({ isOpen, onClose, onSave, currentAddress }
         city: formData.city.trim(),
         state: formData.state.trim(),
         pincode: formData.pincode.trim(),
-        // Store individual fields for future use
+        addressType: formData.addressType,
+        isDefault: formData.isDefault,
+        // Optional Fields specified in API
+        addressLine2: "", 
         landmark: formData.landmark.trim(),
-        buildingNumber: formData.buildingNumber.trim()
+        buildingNumber: formData.buildingNumber.trim(),
       };
+
+      if (mapLocation) {
+        addressData.latitude = mapLocation.lat;
+        addressData.longitude = mapLocation.lng;
+        addressData.lan = mapLocation.lat;
+        addressData.lng = mapLocation.lng;
+      }
 
       await onSave(addressData);
       onClose();
@@ -209,25 +273,16 @@ export default function AddressModal({ isOpen, onClose, onSave, currentAddress }
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           
-          {/* Current Location Button */}
-          <button
-            type="button"
-            onClick={getCurrentLocation}
-            disabled={isLoadingLocation}
-            className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-3 rounded-xl font-medium hover:bg-primary/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoadingLocation ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Fetching location...
-              </>
-            ) : (
-              <>
-                <Navigation className="w-5 h-5" />
-                Use Current Location
-              </>
-            )}
-          </button>
+          {/* Map Picker */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Pin Location on Map
+            </label>
+            <LocationPicker position={mapLocation} setPosition={setMapLocation} />
+            <p className="text-xs text-muted-foreground mt-1">
+              Drag or click on the map to automatically fill your address.
+            </p>
+          </div>
 
           {/* Error Message */}
           {error && (
@@ -235,6 +290,38 @@ export default function AddressModal({ isOpen, onClose, onSave, currentAddress }
               {error}
             </div>
           )}
+
+          {/* Address Type & Default */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="addressType" className="block text-sm font-medium mb-2">
+                Address Type
+              </label>
+              <select
+                id="addressType"
+                name="addressType"
+                value={formData.addressType}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+              >
+                <option value="home">Home</option>
+                <option value="work">Work</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div className="flex items-center pt-8">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="isDefault"
+                  checked={formData.isDefault}
+                  onChange={(e) => setFormData(prev => ({ ...prev, isDefault: e.target.checked }))}
+                  className="w-4 h-4 text-primary rounded border-border focus:ring-primary"
+                />
+                <span className="text-sm font-medium">Set as Default Address</span>
+              </label>
+            </div>
+          </div>
 
           {/* Building Number */}
           <div>

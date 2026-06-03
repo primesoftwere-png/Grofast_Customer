@@ -2,6 +2,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { Toaster } from "react-hot-toast";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const poppins = Poppins({
   weight: ['300', '400', '500', '600', '700'],
@@ -18,8 +19,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={poppins.variable}>
       <body className="min-h-full flex flex-col">
-        <CartProvider>
-          {children}
+        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "placeholder-client-id"}>
+          <CartProvider>
+            {children}
+
           <Toaster
             position="top-right"
             toastOptions={{
@@ -45,7 +48,8 @@ export default function RootLayout({ children }) {
               },
             }}
           />
-        </CartProvider>
+          </CartProvider>
+        </GoogleOAuthProvider>
       </body>
     </html>
   );

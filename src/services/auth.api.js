@@ -41,6 +41,29 @@ export const authAPI = {
   },
 
   /**
+   * Google login user
+   * @param {Object} data - Google login data (token, email, etc.)
+   * @returns {Promise} Login response with token and user data
+   */
+  googleLogin: async (data) => {
+    const response = await apiClient.post(API_ENDPOINTS.AUTH.GOOGLE_LOGIN, data);
+    
+    // Store token and user data in localStorage
+    if (response.success && response.data) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        // Dispatch custom event to notify cart to refresh
+        window.dispatchEvent(new Event('cartRefresh'));
+        console.log('Google login successful - cart refresh event dispatched');
+      }
+    }
+    
+    return response;
+  },
+
+  /**
    * Send OTP to user
    * @param {Object} data - Data containing phone/email
    * @returns {Promise} OTP send response

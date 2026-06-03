@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -9,91 +9,72 @@ import {
   RotateCcw,
   FileText,
   ChevronRight,
+  MapPin,
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
-
-/* ================= MOCK DATA ================= */
-
-const mockOrders = [
-  {
-    id: "1",
-    orderNumber: "DM12345678",
-    date: "Dec 7, 2024",
-    status: "on-the-way",
-    total: 34.99,
-    items: [
-      {
-        name: "Fresh Apples",
-        quantity: 2,
-        image:
-          "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=60&h=60&fit=crop",
-      },
-      {
-        name: "Organic Milk",
-        quantity: 1,
-        image:
-          "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=60&h=60&fit=crop",
-      },
-    ],
-  },
-  {
-    id: "2",
-    orderNumber: "DM12345677",
-    date: "Dec 5, 2024",
-    status: "delivered",
-    total: 52.47,
-    items: [
-      {
-        name: "Sourdough Bread",
-        quantity: 1,
-        image:
-          "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=60&h=60&fit=crop",
-      },
-      {
-        name: "Greek Yogurt",
-        quantity: 2,
-        image:
-          "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=60&h=60&fit=crop",
-      },
-    ],
-  },
-];
+import socketService from "@/services/socket.service";
+import toast from "react-hot-toast";
 
 /* ================= STATUS CONFIG ================= */
 
 const statusConfig = {
-  delivered: {
+  DELIVERED: {
     label: "Delivered",
     className: "bg-primary/15 text-green-dark",
   },
-  "on-the-way": {
-    label: "On the Way",
+  PENDING: {
+    label: "Pending",
     className: "bg-secondary text-secondary-foreground",
   },
-  preparing: {
+  CONFIRMED: {
+    label: "Confirmed",
+    className: "bg-blue-100 text-blue-700",
+  },
+  PREPARING: {
     label: "Preparing",
     className: "bg-muted text-muted-foreground",
   },
-  cancelled: {
+  CANCELLED: {
     label: "Cancelled",
     className: "bg-destructive/15 text-destructive",
+  },
+  "ON_THE_WAY": {
+    label: "On the Way",
+    className: "bg-secondary text-secondary-foreground",
+  },
+  ASSIGNED: {
+    label: "Assigned",
+    className: "bg-secondary text-secondary-foreground",
+  },
+  PICKED_UP: {
+    label: "Picked Up",
+    className: "bg-secondary text-secondary-foreground",
+  },
+  IN_TRANSIT: {
+    label: "In Transit",
+    className: "bg-secondary text-secondary-foreground",
   },
 };
 
 /* ================= ORDER CARD ================= */
 
 function OrderCard({ order }) {
-  const status = statusConfig[order.status];
+  const status = statusConfig[order.orderStatus?.toUpperCase()] || statusConfig.PENDING;
+  const orderDate = new Date(order.createdAt).toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  });
 
   return (
-    <article className="rounded-xl bg-background p-4 shadow animate-slide-up">
+    <article className="rounded-xl bg-background p-4 shadow animate-slide-up border border-border">
       
       {/* Header */}
       <div className="flex justify-between mb-3">
         <div>
           <p className="font-semibold">{order.orderNumber}</p>
           <p className="text-sm text-muted-foreground">
-            {order.date}
+            {orderDate}
           </p>
         </div>
 
@@ -104,92 +85,356 @@ function OrderCard({ order }) {
         </span>
       </div>
 
-      {/* Items */}
-      <div className="flex items-center gap-2 mb-4">
-        {order.items.slice(0, 3).map((item, i) => (
-          <img
-            key={i}
-            src={item.image}
-            alt={item.name}
-            className="w-12 h-12 rounded-lg object-cover"
-          />
-        ))}
+      {/* Items - Show product names */}
+      <div className="mb-4">
+        <div className="space-y-2">
+          {order.items && order.items.map((item, i) => (
+            <div key={i} className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center text-xs font-medium">
+                  {item.productName?.substring(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-medium">{item.productName}</p>
+                  <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                </div>
+              </div>
+              <p className="font-medium">₹{item.totalPrice?.toFixed(2)}</p>
+            </div>
+          ))}
+        </div>
 
-        {order.items.length > 3 && (
-          <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center text-sm">
-            +{order.items.length - 3}
-          </div>
-        )}
-
-        <div className="flex-1 text-right">
-          <p className="font-bold">
-            ${order.total.toFixed(2)}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {order.items.length} items
-          </p>
+        <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
+          <p className="font-bold">Total Amount</p>
+          <p className="font-bold text-lg">₹{order.totalAmount?.toFixed(2)}</p>
         </div>
       </div>
 
       {/* Actions */}
       <div className="flex gap-2">
         
-        {order.status === "on-the-way" && (
+        {(order.showTrackingButton || ["PENDING", "CONFIRMED", "ON_THE_WAY", "ASSIGNED", "PICKED_UP", "IN_TRANSIT"].includes(order.orderStatus?.toUpperCase())) && (
           <Link
-            href="/tracking"
-            className="flex-1 bg-primary text-white py-2 rounded-md text-center flex items-center justify-center gap-1"
+            href={`/tracking/${order.orderToken || order._id}` || order.actionButton?.url}
+            className="flex-1 bg-primary text-white py-2 rounded-md text-center flex items-center justify-center gap-1 hover:opacity-90 transition"
           >
             <Clock className="w-4 h-4" />
-            Track
+            {order.actionButton?.text || "Track Order"}
           </Link>
         )}
 
-        {order.status === "delivered" && (
+        {order.orderStatus?.toUpperCase() === "DELIVERED" && (
           <>
-            <button className="flex-1 bg-primary text-white py-2 rounded-md flex items-center justify-center gap-1">
+            <button className="flex-1 bg-primary text-white py-2 rounded-md flex items-center justify-center gap-1 hover:opacity-90 transition">
               <RotateCcw className="w-4 h-4" />
               Reorder
             </button>
 
-            <button className="border border-border px-3 py-2 rounded-md">
+            <button className="border border-border px-3 py-2 rounded-md hover:bg-muted transition">
               <FileText className="w-4 h-4" />
             </button>
           </>
         )}
 
-        <button className="px-2">
-          <ChevronRight />
-        </button>
+        <Link 
+          href={`/orders/${order.orderToken}`}
+          className="px-3 py-2 border border-border rounded-md hover:bg-muted transition"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Link>
       </div>
     </article>
   );
 }
 
+/* ================= ORDER DETAIL COMPONENT ================= */
+
+function OrderDetail({ token }) {
+  const [orderData, setOrderData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrderByToken = async () => {
+      try {
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+        const accessToken = localStorage.getItem('authToken');
+        
+        const response = await fetch(`${apiBaseUrl}/order/recent/${token}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        if (data.success && (data.order || data.data)) {
+          setOrderData(data.order || data.data);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching order details:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrderByToken();
+  }, [token]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container mx-auto px-4 py-12 flex justify-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!orderData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container mx-auto px-4 py-12 text-center">
+          <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">Order Not Found</h2>
+          <p className="text-muted-foreground mb-6">We could not find the details for this order.</p>
+          <Link href="/orders" className="bg-primary text-primary-foreground px-6 py-2 rounded-xl">Back to Orders</Link>
+        </main>
+      </div>
+    );
+  }
+
+  const orderNumber = orderData.orderNumber || token;
+  const status = statusConfig[orderData.orderStatus?.toUpperCase()] || statusConfig.PENDING;
+  
+  const deliveryAddress = orderData.deliveryAddress?.addressLine1 
+    ? `${orderData.deliveryAddress.addressLine1}${orderData.deliveryAddress.addressLine2 ? ', ' + orderData.deliveryAddress.addressLine2 : ''}`
+    : orderData.deliveryAddressId?.addressLine1 
+    ? `${orderData.deliveryAddressId.addressLine1}${orderData.deliveryAddressId.addressLine2 ? ', ' + orderData.deliveryAddressId.addressLine2 : ''}`
+    : "Address will be confirmed shortly";
+  const city = orderData.deliveryAddress?.city || orderData.deliveryAddressId?.city || "";
+  const state = orderData.deliveryAddress?.state || orderData.deliveryAddressId?.state || "";
+  const pincode = orderData.deliveryAddress?.pincode || orderData.deliveryAddressId?.pincode || "";
+  const fullAddress = deliveryAddress + (city ? `, ${city}` : '') + (state ? `, ${state}` : '') + (pincode ? ` - ${pincode}` : '');
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <main className="container mx-auto px-4 py-6 max-w-lg">
+        <Link href="/orders" className="flex items-center gap-2 text-muted-foreground mb-6 hover:text-foreground transition">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Orders
+        </Link>
+        
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Order Details</h1>
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${status.className}`}>
+            {status.label}
+          </span>
+        </div>
+
+        {/* Order Info */}
+        <div className="rounded-xl bg-background p-6 text-left mb-6 shadow border border-border">
+          <div className="flex justify-between mb-4 pb-4 border-b border-border">
+            <div>
+              <p className="text-sm text-muted-foreground">Order Number</p>
+              <p className="font-bold text-lg">{orderNumber}</p>
+            </div>
+            <Package className="w-8 h-8 text-primary" />
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex gap-3">
+              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                <Clock className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Date Placed</p>
+                <p className="font-medium">{new Date(orderData.createdAt).toLocaleString()}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                <MapPin className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Delivery Address</p>
+                <p className="font-medium text-sm">{fullAddress}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Order Items */}
+        {orderData.items && orderData.items.length > 0 && (
+          <div className="rounded-xl bg-background p-6 text-left mb-6 shadow border border-border">
+            <h2 className="font-bold text-lg mb-4 pb-2 border-b border-border">Items</h2>
+            <div className="space-y-4">
+              {orderData.items.map((item) => (
+                <div key={item._id || item.productId} className="flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">{item.productName}</p>
+                    <p className="text-sm text-muted-foreground">Qty: {item.quantity} × ₹{item.price?.toFixed(2) || item.price}</p>
+                  </div>
+                  <p className="font-semibold">₹{item.totalPrice?.toFixed(2) || item.totalPrice}</p>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-border space-y-2">
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <p>Subtotal</p>
+                <p>₹{orderData.subtotal?.toFixed(2) || 0}</p>
+              </div>
+              {(orderData.taxAmount > 0) && (
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <p>Tax</p>
+                  <p>₹{orderData.taxAmount?.toFixed(2)}</p>
+                </div>
+              )}
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <p>Delivery Fee</p>
+                <p>{orderData.deliveryCharge > 0 ? `₹${orderData.deliveryCharge.toFixed(2)}` : 'Free'}</p>
+              </div>
+              {(orderData.discountAmount > 0) && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <p>Discount</p>
+                  <p>-₹{orderData.discountAmount?.toFixed(2)}</p>
+                </div>
+              )}
+              <div className="flex justify-between font-bold pt-2 border-t border-border text-lg mt-2">
+                <p>Total</p>
+                <p className="text-primary">₹{orderData.totalAmount?.toFixed(2) || 0}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
 /* ================= MAIN PAGE ================= */
 
-export default function OrdersPage() {
+export default function OrdersPage({ token }) {
+  if (token) {
+    return <OrderDetail token={token} />;
+  }
+
   const [activeTab, setActiveTab] = useState("recent");
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [historyOrders, setHistoryOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const currentOrders = mockOrders.filter(
-    (o) =>
-      o.status === "on-the-way" || o.status === "preparing"
-  );
+  const fetchOrders = async () => {
+    try {
+      setIsLoading(true);
+      const accessToken = localStorage.getItem('authToken');
+      
+      if (!accessToken) {
+        console.log('⚠️ No auth token found');
+        setIsLoading(false);
+        return;
+      }
 
-  const pastOrders = mockOrders.filter(
-    (o) =>
-      o.status === "delivered" || o.status === "cancelled"
-  );
+      // Get userId from localStorage
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        console.log('⚠️ No user data found');
+        setIsLoading(false);
+        return;
+      }        
+
+      const user = JSON.parse(userStr);
+      console.log('👤 User data:', user);
+      const userId = user._id || user.id;
+      
+      if (!userId) {
+        console.log('⚠️ No user ID found');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('📤 Fetching categorized orders for user:', userId);
+      
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+      
+      const response = await fetch(`${apiBaseUrl}/order/categorized/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      console.log('📥 Categorized orders response:', data);
+      
+      if (data.success && data.data) {
+        setRecentOrders(data.data.recent || []);
+        setHistoryOrders(data.data.history || []);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching categorized orders:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch categorized orders
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  // Socket Connection for Real-time tracking
+  useEffect(() => {
+    const accessToken = localStorage.getItem('authToken');
+    const userStr = localStorage.getItem('user');
+    
+    if (accessToken && userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        const userId = user._id || user.id;
+        
+        if (userId) {
+          // Connect to socket and join room
+          const socket = socketService.connect(accessToken);
+          if (socket) {
+            socket.emit('join', userId);
+            
+            // Listen for order status updates
+            const handleOrderStatusUpdate = (data) => {
+              console.log('📦 Order Status Update received via Socket:', data);
+              toast.success(`Order ${data.orderId || ''} status updated to ${data.status}`);
+              fetchOrders();
+            };
+            
+            socketService.on('order-status-update', handleOrderStatusUpdate);
+            
+            return () => {
+              socketService.off('order-status-update', handleOrderStatusUpdate);
+            };
+          }
+        }
+      } catch (error) {
+        console.error('Socket initialization error:', error);
+      }
+    }
+    }, []);
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6 max-w-2xl">
         
         {/* Back */}
         <Link
           href="/"
-          className="flex items-center gap-2 text-muted-foreground mb-6"
+          className="flex items-center gap-2 text-muted-foreground mb-6 hover:text-foreground transition"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Home
@@ -204,49 +449,55 @@ export default function OrdersPage() {
           
           <button
             onClick={() => setActiveTab("recent")}
-            className={`flex-1 py-2 ${
+            className={`flex-1 py-2 font-medium ${
               activeTab === "recent"
-                ? "bg-primary text-white"
-                : ""
+                ? "bg-primary text-primary-foreground"
+                : "bg-background text-muted-foreground hover:bg-muted"
             }`}
           >
-            Recent ({currentOrders.length})
+            Recent ({recentOrders.length})
           </button>
 
           <button
             onClick={() => setActiveTab("history")}
-            className={`flex-1 py-2 ${
+            className={`flex-1 py-2 font-medium ${
               activeTab === "history"
-                ? "bg-primary text-white"
-                : ""
+                ? "bg-primary text-primary-foreground"
+                : "bg-background text-muted-foreground hover:bg-muted"
             }`}
           >
-            History
+            History ({historyOrders.length})
           </button>
         </div>
 
         {/* Content */}
-        <div className="space-y-4">
-          
-          {activeTab === "recent" &&
-            (currentOrders.length > 0 ? (
-              currentOrders.map((order) => (
-                <OrderCard key={order.id} order={order} />
-              ))
-            ) : (
-              <EmptyState />
-            ))}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            
+            {activeTab === "recent" &&
+              (recentOrders.length > 0 ? (
+                recentOrders.map((order) => (
+                  <OrderCard key={order._id || order.orderNumber} order={order} />
+                ))
+              ) : (
+                <EmptyState />
+              ))}
 
-          {activeTab === "history" &&
-            (pastOrders.length > 0 ? (
-              pastOrders.map((order) => (
-                <OrderCard key={order.id} order={order} />
-              ))
-            ) : (
-              <EmptyState />
-            ))}
+            {activeTab === "history" &&
+              (historyOrders.length > 0 ? (
+                historyOrders.map((order) => (
+                  <OrderCard key={order._id || order.orderNumber} order={order} />
+                ))
+              ) : (
+                <EmptyState />
+              ))}
 
-        </div>
+          </div>
+        )}
       </main>
     </div>
   );
@@ -256,20 +507,20 @@ export default function OrdersPage() {
 
 function EmptyState() {
   return (
-    <div className="text-center py-12">
-      <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+    <div className="text-center py-16 bg-background rounded-xl border border-border border-dashed">
+      <Package className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
 
-      <h3 className="font-medium text-lg mb-2">
+      <h3 className="font-semibold text-lg mb-2">
         No orders found
       </h3>
 
-      <p className="text-muted-foreground mb-4">
-        Start shopping to see your orders
+      <p className="text-muted-foreground mb-6">
+        You haven't placed any orders in this category yet.
       </p>
 
       <Link
         href="/"
-        className="bg-primary text-white px-6 py-2 rounded-md"
+        className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-medium hover:opacity-90 transition"
       >
         Start Shopping
       </Link>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 import {
   ArrowLeft,
   Mail,
@@ -54,7 +55,7 @@ export default function Auth() {
         console.log('Login response:', response);
 
         if (response.success) {
-          alert("Welcome back!");
+          toast.success("Welcome back!");
           
           // Wait a moment for the cart to refresh
           setTimeout(() => {
@@ -76,7 +77,7 @@ export default function Auth() {
         console.log('Registration response:', response);
 
         if (response.success) {
-          alert("Account created successfully!");
+          toast.success("Account created successfully!");
           // Auto-login after registration if token is provided
           if (response.data?.token) {
             setTimeout(() => {

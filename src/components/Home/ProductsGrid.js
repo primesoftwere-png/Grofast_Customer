@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { productAPI } from "@/services";
 import ProductCard from "@/components/Product/ProductCard";
@@ -14,11 +14,7 @@ export default function ProductsGrid({
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    fetchProducts();
-  }, [selectedCategory, searchQuery, currentPage]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -65,7 +61,11 @@ export default function ProductsGrid({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedCategory, searchQuery, currentPage]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   if (isLoading) {
     return (

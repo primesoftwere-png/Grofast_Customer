@@ -31,9 +31,19 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Token expired or invalid
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/auth';
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname;
+        // Only redirect if not already on auth page
+        if (!currentPath.includes('/auth')) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/auth';
+        } else {
+          // If already on auth page, just clear storage
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+      }
     }
     return Promise.reject(error);
   }

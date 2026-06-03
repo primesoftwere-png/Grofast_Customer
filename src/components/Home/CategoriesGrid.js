@@ -126,9 +126,19 @@ export default function CategoriesGrid({
             }`}
             style={{ animationDelay: `${index * 50}ms` }}
           >
-            <span className="text-2xl md:text-3xl group-hover:scale-110 transition-transform duration-300">
-              {getCategoryIcon(category.categoryName)}
-            </span>
+            <div className="w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 mb-1">
+              {category.categoryImage ? (
+                <img 
+                  src={`http://localhost:8000/uploads/${category.categoryImage}`} 
+                  alt={category.categoryName}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span className="text-2xl md:text-3xl">
+                  {getCategoryIcon(category.categoryName)}
+                </span>
+              )}
+            </div>
 
             <span className="text-xs font-medium text-center leading-tight">
               {category.categoryName}

@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 import Navbar from "@/components/layout/Navbar";
 import HeroBanner from "@/components/Home/HeroBanner";
 import CategoriesGrid from "@/components/Home/CategoriesGrid";
 import BestSellers from "@/components/Home/BestSellers";
+import MostSellProducts from "@/components/Home/MostSellProducts";
 import ProductsGrid from "@/components/Home/ProductsGrid";
 import OffersCarousel from "@/components/Home/OffersCarousel";
 import AdBanner from "@/components/Home/AdBanner";
@@ -15,7 +16,7 @@ import CategoryCarousel from "@/components/Home/CategoryCarousel";
 import Footer from "@/components/layout/Footer";
 import { categoryAPI } from "@/services/category.api";
 
-export default function HomePage() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -23,19 +24,19 @@ export default function HomePage() {
   const searchQuery = searchParams.get("search") || "";
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await categoryAPI.getAll();
-      if (response.success && response.data) {
-        setCategories(response.data);
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryAPI.getAll();
+        if (response.success && response.data) {
+          setCategories(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
       }
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+    };
+
+    fetchCategories();
+  }, []); // ✅ Empty dependency array - only fetch once on mount
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,6 +53,8 @@ export default function HomePage() {
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
         />
+
+        <MostSellProducts />
 
         <BestSellers />
 
@@ -119,4 +122,12 @@ function getCategoryIcon(categoryName) {
     "default": "📦"
   };
   return icons[categoryName] || icons.default;
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
+  );
 }

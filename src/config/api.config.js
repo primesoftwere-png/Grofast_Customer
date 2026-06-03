@@ -15,11 +15,12 @@ export const API_ENDPOINTS = {
   AUTH: {
     REGISTER: '/auth/register',
     LOGIN: '/auth/login',
-    SEND_OTP: '/auth/send-otp',
-    VERIFY_OTP: '/auth/verify-otp',
+    SEND_OTP: '/user/send-otp',
+    VERIFY_OTP: '/user/verify-otp',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
-    LOGOUT: '/auth/logout'
+    LOGOUT: '/auth/logout',
+    GOOGLE_LOGIN: '/user/google-login'
   },
   
   // Product Endpoints
@@ -34,9 +35,13 @@ export const API_ENDPOINTS = {
   
   // Category Endpoints
   CATEGORIES: {
-    LIST: '/categories',
-    DETAIL: (id) => `/categories/${id}`,
-    PRODUCTS: (id) => `/categories/${id}/products`
+    CREATE: '/admin/add-category',
+    LIST: '/categories/structured',
+    DETAIL: (id) => `/admin/get-category/${id}`,
+    UPDATE: (id) => `/admin/update-category/${id}`,
+    DELETE: (id) => `/admin/delete-category/${id}`,
+    PRODUCTS: (id) => `/categories/${id}/products`,
+    STRUCTURED: '/categories/structured'
   },
   
   // Cart Endpoints
@@ -56,9 +61,13 @@ export const API_ENDPOINTS = {
     CREATE: '/orders',
     LIST: '/orders',
     DETAIL: (id) => `/orders/${id}`,
+    RECENT: (userId) => `/order/recent/${userId}`,
+    CATEGORIZED: (userId) => `/order/categorized/${userId}`,
+    COMPLETED: (userId) => `/order/completed/${userId}`,
     CANCEL: (id) => `/orders/${id}/cancel`,
     TRACK: (id) => `/orders/${id}/tracking`,
-    REORDER: (id) => `/orders/${id}/reorder`
+    REORDER: (id) => `/orders/${id}/reorder`,
+    CONVERT_CART_TO_ORDER: '/order/convert-cart-to-order'
   },
   
   // User Endpoints
@@ -71,11 +80,21 @@ export const API_ENDPOINTS = {
   
   // Address Endpoints
   ADDRESS: {
-    LIST: '/user/addresses',
-    ADD: '/user/addresses',
-    UPDATE: (id) => `/user/addresses/${id}`,
-    DELETE: (id) => `/user/addresses/${id}`,
-    SET_DEFAULT: (id) => `/user/addresses/${id}/set-default`,
+    // Customer Router APIs
+    CREATE: '/customer/addresses',
+    GET_USER_ADDRESSES: (userId) => `/customer/addresses/user/${userId}`,
+    GET_DEFAULT: (userId) => `/customer/addresses/default/${userId}`,
+    GET_BY_ID: (addressId) => `/customer/addresses/${addressId}`,
+    UPDATE: (addressId) => `/customer/addresses/${addressId}`,
+    SET_DEFAULT: (addressId) => `/customer/addresses/${addressId}/set-default`,
+    DELETE: (addressId) => `/customer/addresses/${addressId}`,
+    
+    // Auth (User) Router API
+    USER_UPDATE: '/user/update-address',
+
+    // Legacy / Fallback aliases to not break other parts of app
+    LIST: '/customer/addresses',
+    ADD: '/customer/addresses',
     CUSTOMER_ADDRESSES: '/customer/addresses'
   },
   
@@ -119,6 +138,7 @@ export const API_ENDPOINTS = {
   PAYMENT: {
     METHODS: '/payment/methods',
     ADD_METHOD: '/payment/methods',
-    PROCESS: '/payment/process'
+    PROCESS: '/payment/process',
+    CREATE_ORDER: '/payment/create-order'
   }
 };
