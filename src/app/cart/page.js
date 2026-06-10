@@ -312,7 +312,7 @@ export default function Cart() {
     } catch (error) {
       console.error("❌ Error initiating payment:", error);
       setIsProcessingPayment(false);
-      toast.error("Failed to initiate payment: " + error.message);
+      toast.error("We encountered an issue while initiating your payment: " + error.message);
     }
   };
 
@@ -559,7 +559,7 @@ export default function Cart() {
       console.error('Error Message:', error.message);
       
       if (!error.message.includes('404')) {
-        toast.error("There was an error processing your order. Please contact support. Error: " + error.message);
+        toast.error("There was an error processing your order. " + error.message);
       }
       setIsProcessingPayment(false);
       throw error;
@@ -620,7 +620,7 @@ export default function Cart() {
       }
     } catch (error) {
       console.error("❌ Error saving address:", error);
-      toast.error("Failed to save address: " + error.message);
+      toast.error("We couldn't save your address: " + error.message);
       throw error;
     } finally {
       setIsSavingAddress(false);

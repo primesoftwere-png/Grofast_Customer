@@ -83,7 +83,7 @@ export default function Auth() {
         }
       } catch (error) {
         console.error('Google Auth error:', error);
-        toast.error(error.response?.data?.message || error.response?.data?.error || "An error occurred during Google authentication");
+        toast.error(error.message || "An error occurred during Google authentication");
       } finally {
         setIsGoogleLoading(false);
       }
@@ -123,7 +123,7 @@ export default function Auth() {
       }
     } catch (error) {
       console.error('Send OTP error:', error);
-      toast.error(error.response?.data?.message || error.response?.data?.error || "Failed to send OTP");
+      toast.error(error.message || "Failed to send OTP");
     } finally {
       setIsLoading(false);
     }
@@ -146,7 +146,7 @@ export default function Auth() {
       }
     } catch (error) {
       console.error('Verify OTP error:', error);
-      toast.error(error.response?.data?.message || error.response?.data?.error || "Invalid OTP");
+      toast.error(error.message || "Invalid OTP");
     } finally {
       setIsLoading(false);
     }
@@ -208,8 +208,8 @@ export default function Auth() {
       }
     } catch (error) {
       console.error('Auth error:', error);
-      if (error.response) {
-        const message = error.response.data?.message || error.response.data?.error || 'Authentication failed';
+      if (error.message) {
+        const message = error.message;
         toast.error(message);
       } else if (error.request) {
         toast.error('Unable to connect to server. Please check your connection.');

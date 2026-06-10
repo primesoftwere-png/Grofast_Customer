@@ -14,12 +14,17 @@ import AdBanner from "@/components/Home/AdBanner";
 import CustomerReviews from "@/components/Home/CustomerReviews";
 import CategoryCarousel from "@/components/Home/CategoryCarousel";
 import Footer from "@/components/layout/Footer";
+import DynamicBanners from "@/components/Home/DynamicBanners";
+import DynamicAds from "@/components/Home/DynamicAds";
 import { categoryAPI } from "@/services/category.api";
+import { shopAdvertisementAPI } from "@/services/shopAdvertisement.api";
 
 function HomeContent() {
   const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [dynamicBanners, setDynamicBanners] = useState([]);
+  const [dynamicAds, setDynamicAds] = useState([]);
 
   const searchQuery = searchParams.get("search") || "";
 
@@ -35,7 +40,21 @@ function HomeContent() {
       }
     };
 
+    const fetchAdvertisements = async () => {
+      try {
+        const response = await shopAdvertisementAPI.getActiveAds();
+        if (response.success && response.data) {
+          const adsData = response.data;
+          setDynamicBanners(adsData.filter(ad => ad.type === 'banner'));
+          setDynamicAds(adsData.filter(ad => ad.type === 'ad'));
+        }
+      } catch (error) {
+        console.error("Error fetching advertisements:", error);
+      }
+    };
+
     fetchCategories();
+    fetchAdvertisements();
   }, []); // ✅ Empty dependency array - only fetch once on mount
 
   return (
@@ -43,6 +62,8 @@ function HomeContent() {
       <Navbar />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
+        {dynamicBanners.length > 0 && <DynamicBanners banners={dynamicBanners} />}
+
         <HeroBanner />
 
         <AdBanner variant="trust" />
@@ -58,7 +79,7 @@ function HomeContent() {
 
         <BestSellers />
 
-        <AdBanner variant="promo" />
+        {dynamicAds.length > 2 ? <DynamicAds ad={dynamicAds[2]} /> : <AdBanner variant="promo" />}
 
         {/* Dynamic Category Carousels - Display products by category */}
         {categories.length > 0 ? (
@@ -70,8 +91,8 @@ function HomeContent() {
               />
               
               {/* Add ad banners between categories for better UX */}
-              {index === 1 && <AdBanner variant="home-essentials" />}
-              {index === 3 && <AdBanner variant="delivery" />}
+              {index === 1 && (dynamicAds.length > 0 ? <DynamicAds ad={dynamicAds[0]} /> : <AdBanner variant="home-essentials" />)}
+              {index === 3 && (dynamicAds.length > 1 ? <DynamicAds ad={dynamicAds[1]} /> : <AdBanner variant="delivery" />)}
             </React.Fragment>
           ))
         ) : (

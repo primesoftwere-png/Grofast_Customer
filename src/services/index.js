@@ -20,6 +20,7 @@ export { orderAPI } from './order.api';
 // User Services
 export { userAPI } from './user.api';
 export { addressAPI } from './address.api';
+export { wishlistAPI } from './wishlist.api';
 
 // Export API client and config for advanced usage
 export { default as apiClient } from './api.service';

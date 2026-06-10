@@ -99,16 +99,29 @@ apiClient.interceptors.response.use(
         console.error('Resource not found:', config?.url);
       }
       
+      // Default professional fallback message
+      let safeMessage = 'An unexpected issue occurred. Please try again later.';
+      
+      const rawMessage = data?.message || data?.error?.message;
+      
+      // If the backend message is HTML or a very long technical string, use the safe fallback
+      if (typeof rawMessage === 'string' && (rawMessage.includes('<html') || rawMessage.includes('<!DOCTYPE') || rawMessage.length > 150)) {
+        safeMessage = 'We are currently experiencing technical difficulties. Please try again later.';
+      } else if (rawMessage) {
+        safeMessage = rawMessage;
+      }
+      
       // Handle 500 Server Error
       if (status >= 500) {
         console.error('Server error:', data);
+        safeMessage = 'We are currently experiencing technical difficulties. Please try again later.';
       }
       
       // Return structured error
       return Promise.reject({
         status,
         url: config?.url,
-        message: data?.message || data?.error?.message || 'An error occurred',
+        message: safeMessage,
         error: data?.error || data,
         data: data
       });
@@ -118,7 +131,7 @@ apiClient.interceptors.response.use(
       console.error('Network Error - No response received:', error.request);
       return Promise.reject({
         status: 0,
-        message: 'Network error. Please check your internet connection.',
+        message: 'We are unable to reach the server. Please check your internet connection and try again.',
         error: {
           code: 'NETWORK_ERROR',
           message: 'Unable to reach the server'
@@ -130,7 +143,7 @@ apiClient.interceptors.response.use(
       console.error('Request Setup Error:', error.message);
       return Promise.reject({
         status: 0,
-        message: error.message || 'An unexpected error occurred',
+        message: 'An unexpected issue occurred while processing your request. Please try again.',
         error: {
           code: 'UNKNOWN_ERROR',
           message: error.message

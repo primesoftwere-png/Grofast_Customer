@@ -45,6 +45,35 @@ api.interceptors.response.use(
         }
       }
     }
+    // Sanitize error before rejecting
+    if (error.response) {
+      const { status, data } = error.response;
+      let safeMessage = 'An unexpected issue occurred. Please try again later.';
+      const rawMessage = data?.message || data?.error?.message || data?.error;
+
+      if (typeof rawMessage === 'string' && (rawMessage.includes('<html') || rawMessage.includes('<!DOCTYPE') || rawMessage.length > 150)) {
+        safeMessage = 'We are currently experiencing technical difficulties. Please try again later.';
+      } else if (rawMessage) {
+        safeMessage = rawMessage;
+      }
+
+      if (status >= 500) {
+        safeMessage = 'We are currently experiencing technical difficulties. Please try again later.';
+      }
+
+      // Ensure error.message is safe
+      error.message = safeMessage;
+      if (error.response.data) {
+        if (typeof error.response.data === 'object') {
+          error.response.data.message = safeMessage;
+        }
+      }
+    } else if (error.request) {
+      error.message = 'We are unable to reach the server. Please check your internet connection and try again.';
+    } else {
+      error.message = 'An unexpected issue occurred while processing your request. Please try again.';
+    }
+
     return Promise.reject(error);
   }
 );

@@ -140,5 +140,13 @@ export const API_ENDPOINTS = {
     ADD_METHOD: '/payment/methods',
     PROCESS: '/payment/process',
     CREATE_ORDER: '/payment/create-order'
+  },
+  
+  // Wishlist Endpoints
+  WISHLIST: {
+    GET_USER_WISHLIST: (userId) => `/wishlist/user/${userId}`,
+    ADD: '/wishlist/add',
+    REMOVE: '/wishlist/remove',
+    CHECK: (userId, productId) => `/wishlist/check/${userId}/${productId}`
   }
 };

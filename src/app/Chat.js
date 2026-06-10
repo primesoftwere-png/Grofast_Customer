@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import toast from "react-hot-toast";
 import {
   ArrowLeft,
   Send,
@@ -65,7 +66,10 @@ export default function Chat() {
   }, [messages]);
 
   const handleSend = () => {
-    if (!message.trim()) return;
+    if (!message.trim()) {
+      toast.error("Please enter a message");
+      return;
+    }
 
     const newMessage = {
       id: Date.now().toString(),

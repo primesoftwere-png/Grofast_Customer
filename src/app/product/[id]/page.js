@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Star, Minus, Plus, Heart, Share2, Loader2 } from "lucide-react";
-import { productAPI } from "@/services";
+import { Heart, Share2, Loader2, ArrowLeft, Star, Minus, Plus } from "lucide-react";
+import { productAPI, wishlistAPI } from "@/services";
 import { useCart } from "@/context/CartContext";
 import Navbar from "@/components/layout/Navbar";
 import ProductCard from "@/components/Product/ProductCard";
+import toast from "react-hot-toast";
 
 export default function ProductDetails() {
   const params = useParams();
@@ -20,6 +21,9 @@ export default function ProductDetails() {
 
   const { addItem, decreaseItem, removeItem, getItemQuantity } = useCart();
   const quantity = product ? getItemQuantity(product._id || product.id) : 0;
+
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
   // Fetch product details
   useEffect(() => {
@@ -117,6 +121,71 @@ export default function ProductDetails() {
       }
     } catch (err) {
       console.error('Failed to fetch related products:', err);
+    }
+  };
+
+  // Check wishlist status
+  useEffect(() => {
+    const checkWishlist = async () => {
+      const userStr = localStorage.getItem("user");
+      if (userStr && product) {
+        try {
+          const user = JSON.parse(userStr);
+          const userId = user._id || user.id;
+          const productId = product._id || product.id;
+          
+          const res = await wishlistAPI.checkWishlist(userId, productId);
+          if (res.success && res.data) {
+            setIsWishlisted(res.data.isWishlisted || res.data === true);
+          } else if (res.success === undefined) {
+             // If backend returns true/false directly
+             setIsWishlisted(!!res);
+          } else {
+             // Maybe API returns full wishlist
+             const wishlistRes = await wishlistAPI.getUserWishlist(userId);
+             if (wishlistRes.success && Array.isArray(wishlistRes.data)) {
+               const found = wishlistRes.data.some(item => 
+                 item.product?._id === productId || item.productId === productId || item._id === productId
+               );
+               setIsWishlisted(found);
+             }
+          }
+        } catch (error) {
+          console.error("Failed to check wishlist status:", error);
+        }
+      }
+    };
+    
+    checkWishlist();
+  }, [product]);
+
+  const toggleWishlist = async () => {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) {
+      toast.error("Please login to add items to your wishlist");
+      return;
+    }
+
+    try {
+      setIsWishlistLoading(true);
+      const user = JSON.parse(userStr);
+      const userId = user._id || user.id;
+      const productId = product._id || product.id;
+
+      if (isWishlisted) {
+        await wishlistAPI.removeFromWishlist({ userId, productId });
+        setIsWishlisted(false);
+        toast.success("Removed from wishlist");
+      } else {
+        await wishlistAPI.addToWishlist({ userId, productId });
+        setIsWishlisted(true);
+        toast.success("Added to wishlist");
+      }
+    } catch (error) {
+      console.error("Failed to update wishlist:", error);
+      toast.error("Failed to update wishlist. Please try again.");
+    } finally {
+      setIsWishlistLoading(false);
     }
   };
 
@@ -230,8 +299,12 @@ export default function ProductDetails() {
 
             {/* Actions */}
             <div className="absolute top-4 right-4 flex flex-col gap-2">
-              <button className="bg-white p-2 rounded-full shadow hover:shadow-lg transition">
-                <Heart className="w-5 h-5" />
+              <button 
+                onClick={toggleWishlist}
+                disabled={isWishlistLoading}
+                className="bg-white p-2 rounded-full shadow hover:shadow-lg transition disabled:opacity-50"
+              >
+                <Heart className={`w-5 h-5 transition-colors ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
               </button>
               <button className="bg-white p-2 rounded-full shadow hover:shadow-lg transition">
                 <Share2 className="w-5 h-5" />
