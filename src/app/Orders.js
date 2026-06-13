@@ -156,7 +156,7 @@ function OrderDetail({ token }) {
   useEffect(() => {
     const fetchOrderByToken = async () => {
       try {
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000/api';
         const accessToken = localStorage.getItem('authToken');
         
         const response = await fetch(`${apiBaseUrl}/order/recent/${token}`, {
@@ -360,7 +360,7 @@ export default function OrdersPage({ token }) {
 
       console.log('📤 Fetching categorized orders for user:', userId);
       
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000/api';
       
       const response = await fetch(`${apiBaseUrl}/order/categorized/${userId}`, {
         method: 'GET',

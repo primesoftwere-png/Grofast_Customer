@@ -2,12 +2,12 @@
 
 import { io } from 'socket.io-client';
 
-const normalizeSocketUrl = (url) => (url || 'http://localhost:8001')
+const normalizeSocketUrl = (url) => (url || 'http://172.20.10.5:8000')
   .replace(/\/api\/?$/, '')
   .replace(/\/$/, '');
 
 const SOCKET_URL = normalizeSocketUrl(
-  process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
+  process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000'
 );
 
 class SocketService {
