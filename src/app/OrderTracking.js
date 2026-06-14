@@ -35,15 +35,17 @@ const getStatusStep = (status) => {
   if (!status) return 1;
   const statusStepMap = {
     'PENDING': 1,
+    'SHOP_ACCEPTED': 2,
     'CONFIRMED': 2,
     'ASSIGNED': 2,
+    'ASSIGNED_TO_DELIVERY': 2,
     'PREPARING': 2,
     'PICKED_UP': 3,
     'IN_TRANSIT': 3,
     'ON_THE_WAY': 3,
     'DELIVERED': 4
   };
-  return statusStepMap[status.toUpperCase()] || 1;
+  return statusStepMap[status ? status.toUpperCase() : 'PENDING'] || 1;
 };
 
 export default function OrderTracking({ token }) {
@@ -64,7 +66,7 @@ export default function OrderTracking({ token }) {
         console.log('📤 Fetching order for tracking with token:', token);
         
         const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-        const accessToken = localStorage.getItem('authToken');
+        const accessToken = localStorage.getItem('token');
         
         const response = await fetch(`${apiBaseUrl}/order/recent/${token}`, {
           method: 'GET',
@@ -77,7 +79,10 @@ export default function OrderTracking({ token }) {
         const data = await response.json();
         console.log('📥 Order tracking response:', data);
         
-        if (data.success && data.order) {
+        if (data.success && data.data) {
+          setOrderData(data.data);
+          setCurrentStep(getStatusStep(data.data.orderStatus));
+        } else if (data.success && data.order) {
           setOrderData(data.order);
           setCurrentStep(getStatusStep(data.order.orderStatus));
         }
@@ -92,7 +97,7 @@ export default function OrderTracking({ token }) {
   }, [token]);
 
   // Use the tracking hook
-  const { orderStatus: liveStatus, deliveryLocation, deliveryBoy } = useOrderTracking(orderData?._id);
+  const { orderStatus: liveStatus, deliveryLocation, deliveryBoy, otp: liveOtp } = useOrderTracking(orderData?._id);
 
   // Update step when live status changes
   useEffect(() => {
@@ -134,20 +139,23 @@ export default function OrderTracking({ token }) {
 
   const getCustomerLocation = () => {
     if (!orderData) return null;
-    const lat = orderData.deliveryAddress?.lat || orderData.deliveryAddress?.lan || orderData.deliveryAddressId?.lat || orderData.deliveryAddressId?.lan;
-    const lng = orderData.deliveryAddress?.lng || orderData.deliveryAddressId?.lng;
+    const addr = orderData.deliveryAddressId || orderData.deliveryAddress;
+    const lat = addr?.lat || addr?.lan || addr?.latitude;
+    const lng = addr?.lng || addr?.longitude;
     return lat && lng ? { lat, lng } : null;
   };
 
   const getShopLocation = () => {
     if (!orderData) return null;
-    const lat = orderData.shop?.lat || orderData.shop?.lan || orderData.vendorId?.lat;
-    const lng = orderData.shop?.lng || orderData.vendorId?.lng;
+    const shop = orderData.shopId || orderData.shop;
+    const lat = shop?.lat || shop?.lan || shop?.latitude;
+    const lng = shop?.lng || shop?.longitude;
     return lat && lng ? { lat, lng } : null;
   };
 
   const currentStatusDisplay = liveStatus || orderData?.orderStatus || "PENDING";
-  const displayRider = deliveryBoy || orderData?.deliveryBoy;
+  const displayRider = deliveryBoy || orderData?.deliveryBoyId || orderData?.deliveryBoy;
+  const displayOtp = liveOtp?.code || liveOtp || orderData?.deliveryOTP?.code || orderData?.deliveryOtp || orderData?.otp;
 
   return (
     <div className="min-h-screen bg-background">
@@ -171,6 +179,7 @@ export default function OrderTracking({ token }) {
             liveLocation={deliveryLocation}
             shopLocation={getShopLocation()}
             customerLocation={getCustomerLocation()}
+            deliveryBoyImage={displayRider?.profileImage}
           />
 
           {/* Rider Card */}
@@ -205,6 +214,25 @@ export default function OrderTracking({ token }) {
             </div>
           </div>
         </div>
+
+        {/* Delivery OTP */}
+        {displayOtp && currentStatusDisplay !== 'DELIVERED' && (
+          <div className="rounded-xl bg-primary/5 p-6 shadow mb-6 border border-primary/20 text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-primary/30"></div>
+            <p className="text-sm text-primary font-bold mb-4 uppercase tracking-wider">Delivery Verification PIN</p>
+            <div className="flex justify-center gap-2 sm:gap-3">
+              {String(displayOtp).padStart(6, '0').substring(0, 6).split('').map((char, index) => (
+                <div 
+                  key={index} 
+                  className="w-10 h-12 sm:w-12 sm:h-14 bg-background border-2 border-primary/20 rounded-lg flex items-center justify-center text-2xl sm:text-3xl font-bold text-primary shadow-sm"
+                >
+                  {char}
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-4 font-medium">Share this PIN with the rider to confirm your delivery</p>
+          </div>
+        )}
 
         {/* Timeline */}
         <div className="rounded-xl bg-background p-6 shadow mb-6 border border-border">
@@ -268,21 +296,21 @@ export default function OrderTracking({ token }) {
         </div>
 
         {/* Shop */}
-        {orderData?.shop && (
+        {(orderData?.shop || orderData?.shopId) && (
           <div className="rounded-xl bg-background p-4 shadow mb-6 flex items-center gap-4 border border-border">
             <img
-              src={orderData.shop.image || orderData.shop.logo || "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=100"}
+              src={(orderData.shop?.image || orderData.shop?.logo || orderData.shopId?.image) || "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=100"}
               className="w-16 h-16 rounded-xl object-cover"
-              alt={orderData.shop.name || "Shop"}
+              alt={(orderData.shop?.name || orderData.shopId?.shopName) || "Shop"}
             />
             <div className="flex-1">
-              <p className="font-medium">{orderData.shop.name || "Fresh Mart"}</p>
+              <p className="font-medium">{(orderData.shop?.name || orderData.shopId?.shopName) || "Fresh Mart"}</p>
               <p className="text-sm text-muted-foreground">
-                {orderData.shop.address || "123 Market Street"}
+                {(orderData.shop?.address || orderData.shopId?.address) || "123 Market Street"}
               </p>
             </div>
 
-            <Link href={`/chat/shop/${orderData.shop._id || 'shop1'}`}>
+            <Link href={`/chat/shop/${orderData.shop?._id || orderData.shopId?._id || (typeof orderData.shopId === 'string' ? orderData.shopId : 'shop1')}`}>
               <button className="border px-3 py-2 rounded-md hover:bg-muted transition">
                 <MessageCircle className="w-5 h-5" />
               </button>

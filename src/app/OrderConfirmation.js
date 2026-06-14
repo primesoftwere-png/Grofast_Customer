@@ -36,10 +36,10 @@ export default function OrderConfirmation({ token }) {
         }
         
         console.log('📤 Fetching order with token:', token);
-        console.log('📤 API URL: http://172.20.10.5:8000/api/order/recent/' + token);
+        console.log('📤 API URL: http://http://localhost:8001/api/order/recent/' + token);
         
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000/api';
-        const accessToken = localStorage.getItem('authToken');
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://http://localhost:8001/api';
+        const accessToken = localStorage.getItem('token');
         
         console.log('📤 Access Token:', accessToken ? 'Found' : 'Not Found');
         console.log('📤 Full API Call: GET ' + apiBaseUrl + '/order/recent/' + token);

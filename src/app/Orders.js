@@ -156,8 +156,8 @@ function OrderDetail({ token }) {
   useEffect(() => {
     const fetchOrderByToken = async () => {
       try {
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000/api';
-        const accessToken = localStorage.getItem('authToken');
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://http://localhost:8001/api';
+        const accessToken = localStorage.getItem('token');
         
         const response = await fetch(`${apiBaseUrl}/order/recent/${token}`, {
           method: 'GET',
@@ -332,7 +332,7 @@ export default function OrdersPage({ token }) {
   const fetchOrders = async () => {
     try {
       setIsLoading(true);
-      const accessToken = localStorage.getItem('authToken');
+      const accessToken = localStorage.getItem('token');
       
       if (!accessToken) {
         console.log('⚠️ No auth token found');
@@ -360,7 +360,7 @@ export default function OrdersPage({ token }) {
 
       console.log('📤 Fetching categorized orders for user:', userId);
       
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.10.5:8000/api';
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://http://localhost:8001/api';
       
       const response = await fetch(`${apiBaseUrl}/order/categorized/${userId}`, {
         method: 'GET',
@@ -391,7 +391,7 @@ export default function OrdersPage({ token }) {
 
   // Socket Connection for Real-time tracking
   useEffect(() => {
-    const accessToken = localStorage.getItem('authToken');
+    const accessToken = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
     
     if (accessToken && userStr) {

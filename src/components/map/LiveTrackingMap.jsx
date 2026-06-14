@@ -29,7 +29,6 @@ const createCustomIcon = (color) => {
 };
 
 const shopIcon = createCustomIcon("#22c55e"); // Green (primary)
-const deliveryIcon = createCustomIcon("#eab308"); // Yellow (secondary)
 const customerIcon = createCustomIcon("#000000"); // Black
 
 // Component to dynamically adjust map bounds
@@ -51,7 +50,7 @@ function MapUpdater({ liveLocation, shopLocation, customerLocation }) {
   return null;
 }
 
-export default function LiveTrackingMap({ liveLocation, shopLocation, customerLocation }) {
+export default function LiveTrackingMap({ liveLocation, shopLocation, customerLocation, deliveryBoyImage }) {
   // Default to a central location if nothing is available
   const defaultCenter = [20.5937, 78.9629]; // India center
   
@@ -63,6 +62,19 @@ export default function LiveTrackingMap({ liveLocation, shopLocation, customerLo
       : (customerLocation?.lat && customerLocation?.lng)
         ? [customerLocation.lat, customerLocation.lng]
         : defaultCenter;
+
+  const deliveryIcon = L.divIcon({
+    className: 'custom-leaflet-icon',
+    html: `<div style="position: relative; display: flex; flex-direction: column; align-items: center;">
+      <div style="width: 46px; height: 46px; border-radius: 50%; border: 3px solid #f97316; box-shadow: 0 4px 10px rgba(0,0,0,0.3); overflow: hidden; display: flex; align-items: center; justify-content: center; background-color: white; position: relative; z-index: 2;">
+        <img src="${deliveryBoyImage || '/delivery_boy.jpg'}" style="width: 100%; height: 100%; object-fit: cover;" alt="Delivery Partner" />
+      </div>
+      <div style="width: 14px; height: 14px; background-color: #f97316; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%) rotate(45deg); z-index: 1;"></div>
+    </div>`,
+    iconSize: [46, 52],
+    iconAnchor: [23, 52],
+    popupAnchor: [0, -52]
+  });
 
   return (
     <div style={{ height: "100%", width: "100%", zIndex: 0 }}>

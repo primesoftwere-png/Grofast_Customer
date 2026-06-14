@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { authAPI } from "@/services/auth.api";
 import { useGoogleLogin } from "@react-oauth/google";
+import toast from "react-hot-toast";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
