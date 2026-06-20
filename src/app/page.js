@@ -62,7 +62,7 @@ function HomeContent() {
       <Navbar />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {dynamicBanners.length > 0 && <DynamicBanners banners={dynamicBanners} />}
+        {/* {dynamicBanners.length > 0 && <DynamicBanners banners={dynamicBanners} />} */}
 
         <HeroBanner />
 

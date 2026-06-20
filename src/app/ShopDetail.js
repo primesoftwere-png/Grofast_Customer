@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -14,25 +14,107 @@ import {
   ChevronRight,
   Share2,
   Heart,
+  Mail,
+  User,
 } from "lucide-react";
 
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/Product/ProductCard";
 
-import { shops } from "@/data/shops";
-import { products, categories } from "@/data/products";
+import { categories as staticCategories } from "@/data/products";
 
 export default function ShopDetail() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id;
 
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [shop, setShop] = useState(null);
+  const [shopProducts, setShopProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const scrollRef = useRef(null);
 
-  const shop = shops.find((s) => s.id === id);
+  const getImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    let cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    if (!cleanUrl.startsWith('uploads/')) {
+      cleanUrl = `uploads/${cleanUrl}`;
+    }
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const serverUrl = baseUrl.replace('/api', '');
+    return `${serverUrl}/${cleanUrl}`;
+  };
+
+  useEffect(() => {
+    const fetchShop = async () => {
+      try {
+        setLoading(true);
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        const response = await fetch(`${baseUrl}/customer/shop/${id}`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          const data = result.data;
+          setShop({
+            id: data._id,
+            name: data.shopName,
+            description: data.description || "A wonderful shop for your daily needs.",
+            images: [
+              getImageUrl(data.shopImage) || 'https://via.placeholder.com/800x400?text=Shop+Banner', 
+              getImageUrl(data.shopBanner) || 'https://via.placeholder.com/800x400?text=Shop+Banner+2'
+            ],
+            rating: data.rating || 4.5,
+            reviewCount: data.totalReviews || 0,
+            distance: "1.2 km",
+            deliveryTime: "30-45 mins",
+            phone: data.shopkeeperId?.phone || data.contactNumber || "+91 9876543210",
+            address: `${data.shopAddress || ''}, ${data.city || ''}`,
+            categories: data.tags && data.tags.length > 0 ? data.tags : ["Vegetables", "Fruits"],
+            isOpen: data.isOpen !== undefined ? data.isOpen : true,
+            shopkeeper: data.shopkeeperId && data.shopkeeperId.userId ? {
+              id: data.shopkeeperId.userId._id,
+              name: data.shopkeeperId.userId.fullname || data.shopkeeperId.ownerName,
+              image: getImageUrl(data.shopkeeperId.userId.profileImage) || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(data.shopkeeperId.userId.fullname || data.shopkeeperId.ownerName || 'S'),
+              email: data.shopkeeperId.userId.email,
+              phone: data.shopkeeperId.userId.phone
+            } : null
+          });
+
+          // Fetch products for this shopkeeper (using User ID)
+          if (data.shopkeeperId && data.shopkeeperId.userId && data.shopkeeperId.userId._id) {
+            const productsRes = await fetch(`${baseUrl}/customer/products?shopkeeperId=${data.shopkeeperId.userId._id}&limit=100`);
+            const productsResult = await productsRes.json();
+            if (productsResult.success && productsResult.data) {
+              setShopProducts(productsResult.data);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching shop:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (id) {
+      fetchShop();
+    }
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-12 flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (!shop) {
     return (
@@ -50,12 +132,11 @@ export default function ShopDetail() {
     );
   }
 
-  const shopProducts = products.filter((p) =>
-    shop.categories.includes(p.category)
-  );
+  const uniqueProductCategories = [...new Set(shopProducts.map(p => p.productCategory?.categoryName || p.category).filter(Boolean))];
+  const displayCategories = uniqueProductCategories.length > 0 ? uniqueProductCategories : shop.categories;
 
   const filteredProducts = selectedCategory
-    ? shopProducts.filter((p) => p.category === selectedCategory)
+    ? shopProducts.filter((p) => (p.productCategory?.categoryName || p.category) === selectedCategory)
     : shopProducts;
 
   const scrollCategories = (direction) => {
@@ -75,13 +156,13 @@ export default function ShopDetail() {
       <main className="container mx-auto px-4 py-6">
         
         {/* Back */}
-        <Link
-          href="/shops"
-          className="flex items-center gap-2 text-muted-foreground mb-6"
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-muted-foreground mb-6 hover:text-primary transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Shops
-        </Link>
+        </button>
 
         {/* Images */}
         <div className="relative rounded-3xl overflow-hidden mb-6">
@@ -215,6 +296,35 @@ export default function ShopDetail() {
           <div className="mt-4 pt-4 border-t text-sm text-muted-foreground flex gap-2">
             <MapPin /> {shop.address}
           </div>
+
+          {/* Shopkeeper Details */}
+          {shop.shopkeeper && (
+            <div className="mt-6 pt-6 border-t flex items-center gap-4">
+              <img 
+                src={shop.shopkeeper.image} 
+                alt={shop.shopkeeper.name || "Shopkeeper"} 
+                className="w-16 h-16 rounded-full object-cover border-2 border-primary/20 shadow-sm"
+              />
+              <div>
+                <h3 className="text-sm font-medium text-primary flex items-center gap-1">
+                  <User className="w-4 h-4" /> Shopkeeper
+                </h3>
+                <p className="text-lg font-semibold mt-1">{shop.shopkeeper.name}</p>
+                <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+                  {shop.shopkeeper.email && (
+                    <a href={`mailto:${shop.shopkeeper.email}`} className="flex items-center gap-1 hover:text-primary transition-colors">
+                      <Mail className="w-4 h-4" /> {shop.shopkeeper.email}
+                    </a>
+                  )}
+                  {shop.shopkeeper.phone && (
+                    <a href={`tel:${shop.shopkeeper.phone}`} className="flex items-center gap-1 hover:text-primary transition-colors">
+                      <Phone className="w-4 h-4" /> {shop.shopkeeper.phone}
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Categories */}
@@ -226,19 +336,30 @@ export default function ShopDetail() {
 
           <div
             ref={scrollRef}
-            className="flex gap-2 overflow-x-auto"
+            className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
           >
             <button
               onClick={() => setSelectedCategory(null)}
-              className={`px-3 py-1 rounded-full border ${
-                !selectedCategory ? "bg-primary text-white" : ""
+              className={`flex flex-col items-center gap-2 min-w-[80px] p-2 rounded-xl transition-all ${
+                !selectedCategory
+                  ? "bg-primary/10 shadow-sm"
+                  : "hover:bg-muted"
               }`}
             >
-              All
+              <div className={`w-16 h-16 rounded-full overflow-hidden border-2 flex items-center justify-center bg-secondary text-2xl ${
+                !selectedCategory ? "border-primary text-primary" : "border-border text-muted-foreground"
+              }`}>
+                🌟
+              </div>
+              <span className={`text-xs font-medium whitespace-nowrap ${
+                !selectedCategory ? "text-primary font-bold" : "text-muted-foreground"
+              }`}>
+                All
+              </span>
             </button>
 
-            {shop.categories.map((cat) => {
-              const category = categories.find(
+            {displayCategories.map((cat) => {
+              const category = staticCategories.find(
                 (c) => c.name === cat
               );
 
@@ -246,13 +367,26 @@ export default function ShopDetail() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1 rounded-full border ${
+                  className={`flex flex-col items-center gap-2 min-w-[80px] p-2 rounded-xl transition-all ${
                     selectedCategory === cat
-                      ? "bg-primary text-white"
-                      : ""
+                      ? "bg-primary/10 shadow-sm"
+                      : "hover:bg-muted"
                   }`}
                 >
-                  {category?.icon} {cat}
+                  <div className={`w-16 h-16 rounded-full overflow-hidden border-2 flex items-center justify-center text-2xl bg-muted ${
+                    selectedCategory === cat ? "border-primary" : "border-border"
+                  }`}>
+                    {category?.image ? (
+                      <img src={category.image} alt={cat} className="w-full h-full object-cover" />
+                    ) : (
+                      category?.icon || "🛒"
+                    )}
+                  </div>
+                  <span className={`text-xs font-medium whitespace-nowrap ${
+                    selectedCategory === cat ? "text-primary font-bold" : "text-muted-foreground"
+                  }`}>
+                    {cat}
+                  </span>
                 </button>
               );
             })}
@@ -273,7 +407,7 @@ export default function ShopDetail() {
           {filteredProducts.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {filteredProducts.map((p) => (
-                <ProductCard key={p.id} product={p} />
+                <ProductCard key={p._id || p.id} product={p} />
               ))}
             </div>
           ) : (

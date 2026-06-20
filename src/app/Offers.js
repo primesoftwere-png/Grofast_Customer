@@ -1,28 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Tag, Copy, Check } from "lucide-react";
-import { offers, products } from "@/data/products";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/Product/ProductCard";
+import { shopAdvertisementAPI } from "@/services/shopAdvertisement.api";
+import { productAPI } from "@/services/product.api";
 
 export default function OffersPage() {
   const [copiedCode, setCopiedCode] = useState(null);
+  const [ads, setAds] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleCopyCode = (code) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [adsRes, productsRes] = await Promise.all([
+          shopAdvertisementAPI.getActiveAds().catch(err => ({ success: false, data: [] })),
+          productAPI.getAll().catch(err => ({ success: false, data: [] }))
+        ]);
+        
+        if (adsRes && adsRes.success && adsRes.data) {
+          setAds(adsRes.data);
+        }
+        
+        if (productsRes && productsRes.success && productsRes.data) {
+          const allProducts = Array.isArray(productsRes.data) ? productsRes.data : 
+                              (productsRes.data.products || []);
+          // You can filter discounted products if there's a field for it
+          setProducts(allProducts);
+        }
+      } catch (error) {
+        console.error("Error fetching offers page data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
-    toast.success("Coupon code copied!");
-
-    setTimeout(() => setCopiedCode(null), 2000);
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/placeholder-product.svg';
+    if (imagePath.startsWith('http')) return imagePath;
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const baseUrl = apiBase.replace('/api', '');
+    return `${baseUrl}/uploads/${imagePath}`;
   };
 
-  const discountedProducts = products.filter(
-    (p) => p.originalPrice
-  );
+  const handleCopyCode = (code) => {
+    if (!code) return;
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,96 +90,120 @@ export default function OffersPage() {
           </div>
         </div>
 
-        {/* Coupons */}
-        <section className="mb-12">
-          <h2 className="text-xl font-semibold mb-4">
-            Active Coupons
-          </h2>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <>
+            {/* Coupons / Banners */}
+            {ads.length > 0 && (
+              <section className="mb-12">
+                <h2 className="text-xl font-semibold mb-4">
+                  Active Promotions
+                </h2>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            {offers.map((offer, index) => (
-              <div
-                key={offer.id}
-                className="rounded-xl bg-background overflow-hidden hover:shadow-card-lg transition"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                
-                {/* Image */}
-                <div className="relative h-40">
-                  <img
-                    src={offer.image}
-                    alt={offer.title}
-                    className="w-full h-full object-cover"
-                  />
+                <div className="grid md:grid-cols-2 gap-4">
+                  {ads.map((offer, index) => (
+                    <div
+                      key={offer._id || index}
+                      className="rounded-xl bg-background overflow-hidden hover:shadow-card-lg transition border border-border"
+                      style={{ animationDelay: `${index * 100}ms` }}
+                    >
+                      
+                      {/* Image */}
+                      <Link href={offer.targetUrl || "#"} className="block relative h-48 md:h-56">
+                        <img
+                          src={getImageUrl(offer.image)}
+                          alt={offer.title || "Promotion"}
+                          className="w-full h-full object-cover transition-transform hover:scale-105 duration-500"
+                        />
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                  <div className="absolute bottom-4 left-4 text-background">
-                    <span className="px-3 py-1 bg-primary rounded-full text-sm font-bold">
-                      {offer.discount} OFF
-                    </span>
-                  </div>
-                </div>
+                        <div className="absolute bottom-4 left-4 right-4 text-white">
+                          {offer.discount && (
+                            <span className="px-3 py-1 bg-primary rounded-full text-sm font-bold inline-block mb-2">
+                              {offer.discount}
+                            </span>
+                          )}
+                          <h3 className="font-semibold text-xl drop-shadow-md">
+                            {offer.title || "Special Offer"}
+                          </h3>
+                        </div>
+                      </Link>
 
-                {/* Content */}
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-1">
-                    {offer.title}
-                  </h3>
+                      {/* Content */}
+                      {(offer.description || offer.code) && (
+                        <div className="p-4 border-t border-border">
+                          {offer.description && (
+                            <p className="text-sm text-muted-foreground mb-3">
+                              {offer.description}
+                            </p>
+                          )}
 
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {offer.description}
-                  </p>
+                          {offer.code && (
+                            <div className="flex items-center justify-between mt-2">
+                              <div className="flex items-center gap-2 bg-secondary rounded-lg px-3 py-2">
+                                <code className="font-mono font-bold text-sm">
+                                  {offer.code}
+                                </code>
 
-                  <div className="flex items-center justify-between">
-                    
-                    {/* Code */}
-                    <div className="flex items-center gap-2 bg-secondary rounded-lg px-3 py-2">
-                      <code className="font-mono font-bold text-sm">
-                        {offer.code}
-                      </code>
+                                <button
+                                  onClick={() => handleCopyCode(offer.code)}
+                                  className="text-primary hover:text-green-dark"
+                                >
+                                  {copiedCode === offer.code ? (
+                                    <Check className="w-4 h-4" />
+                                  ) : (
+                                    <Copy className="w-4 h-4" />
+                                  )}
+                                </button>
+                              </div>
 
-                      <button
-                        onClick={() =>
-                          handleCopyCode(offer.code)
-                        }
-                        className="text-primary hover:text-green-dark"
-                      >
-                        {copiedCode === offer.code ? (
-                          <Check className="w-4 h-4" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
-                      </button>
+                              {offer.validUntil && (
+                                <span className="text-xs text-muted-foreground">
+                                  Valid until {offer.validUntil}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-
-                    <span className="text-xs text-muted-foreground">
-                      Valid until {offer.validUntil}
-                    </span>
-                  </div>
+                  ))}
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
+              </section>
+            )}
 
-        {/* Discounted Products */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4">
-            Products on Sale
-          </h2>
+            {/* Discounted Products */}
+            {products.length > 0 && (
+              <section>
+                <h2 className="text-xl font-semibold mb-4">
+                  Products on Sale
+                </h2>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {discountedProducts.map((product, index) => (
-              <div
-                key={product.id}
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <ProductCard product={product} />
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {products.map((product, index) => (
+                    <div
+                      key={product._id || product.id}
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <ProductCard product={product} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+            
+            {!isLoading && ads.length === 0 && products.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                <p className="text-lg">No active offers available at the moment.</p>
+                <p className="text-sm mt-2">Please check back later!</p>
               </div>
-            ))}
-          </div>
-        </section>
+            )}
+          </>
+        )}
 
       </main>
 

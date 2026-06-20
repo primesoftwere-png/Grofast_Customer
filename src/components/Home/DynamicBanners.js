@@ -16,6 +16,14 @@ export default function DynamicBanners({ banners }) {
     return () => clearInterval(interval);
   }, [banners]);
 
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/placeholder-product.svg';
+    if (imagePath.startsWith('http')) return imagePath;
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const baseUrl = apiBase.replace('/api', '');
+    return `${baseUrl}/uploads/${imagePath}`;
+  };
+
   if (!banners || banners.length === 0) return null;
 
   return (
@@ -30,14 +38,14 @@ export default function DynamicBanners({ banners }) {
           {banner.targetUrl ? (
             <Link href={banner.targetUrl} className="block w-full h-full">
               <img
-                src={banner.image}
+                src={getImageUrl(banner.image)}
                 alt={banner.title || 'Advertisement Banner'}
                 className="w-full h-full object-cover"
               />
             </Link>
           ) : (
             <img
-              src={banner.image}
+              src={getImageUrl(banner.image)}
               alt={banner.title || 'Advertisement Banner'}
               className="w-full h-full object-cover"
             />
@@ -69,3 +77,4 @@ export default function DynamicBanners({ banners }) {
     </div>
   );
 }
+  

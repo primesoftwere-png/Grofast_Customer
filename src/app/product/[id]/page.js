@@ -247,9 +247,9 @@ export default function ProductDetails() {
   const productDescription = product.productDescription || product.description;
   const productRating = product.productRating || product.rating || 0;
   const productStock = product.productQuantity || product.stock || 0;
-  const productCategory = typeof product.productCategory === 'object' 
+  const productCategory = typeof product.productCategory === 'object' && product.productCategory !== null
     ? product.productCategory?.categoryName 
-    : (product.category || product.productCategory);
+    : (product.category || product.productCategory || 'Uncategorized');
 
   return (
     <div className="min-h-screen bg-background">
@@ -343,12 +343,12 @@ export default function ProductDetails() {
             {/* Price */}
             <div className="flex gap-3 mb-6 items-baseline">
               <span className="text-4xl font-bold">
-                ₹{productPrice.toFixed(2)}
+                ₹{Number(productPrice || 0).toFixed(2)}
               </span>
 
               {product.originalPrice && (
                 <span className="line-through text-muted-foreground text-xl">
-                  ₹{product.originalPrice.toFixed(2)}
+                  ₹{Number(product.originalPrice).toFixed(2)}
                 </span>
               )}
 
@@ -424,7 +424,7 @@ export default function ProductDetails() {
                   ? 'Out of Stock' 
                   : (productStock > 0 && quantity >= productStock)
                     ? 'Max Stock Reached'
-                    : `Add to Cart - ₹${(productPrice * Math.max(1, quantity)).toFixed(2)}`}
+                    : `Add to Cart - ₹${(Number(productPrice || 0) * Math.max(1, quantity)).toFixed(2)}`}
               </button>
 
             </div>

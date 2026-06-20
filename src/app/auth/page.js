@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -31,6 +31,13 @@ export default function Auth() {
   const [otp, setOtp] = useState("");
 
   const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      router.replace('/');
+    }
+  }, [router]);
 
   const [formData, setFormData] = useState({
     fullname: "",

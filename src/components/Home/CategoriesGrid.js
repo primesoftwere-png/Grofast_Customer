@@ -30,6 +30,18 @@ export default function CategoriesGrid({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const getImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    let cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    if (!cleanUrl.startsWith('uploads/')) {
+      cleanUrl = `uploads/${cleanUrl}`;
+    }
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const serverUrl = baseUrl.replace('/api', '');
+    return `${serverUrl}/${cleanUrl}`;
+  };
+
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -129,7 +141,7 @@ export default function CategoriesGrid({
             <div className="w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 mb-1">
               {category.categoryImage ? (
                 <img 
-                  src={`http://localhost:8000/uploads/${category.categoryImage}`} 
+                  src={getImageUrl(category.categoryImage)} 
                   alt={category.categoryName}
                   className="w-full h-full object-contain"
                 />

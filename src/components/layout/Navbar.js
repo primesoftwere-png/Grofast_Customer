@@ -54,8 +54,8 @@ export default function Navbar() {
       if (searchQuery.trim().length > 2) {
         setIsAiSearching(true);
         try {
-          const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-          const chatUrl = apiBaseUrl.replace('/api', '/chat');
+          const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+          const chatUrl = `${apiBaseUrl}/ai/search`;
           const res = await fetch(chatUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },

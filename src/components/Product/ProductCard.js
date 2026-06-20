@@ -62,15 +62,18 @@ export default function ProductCard({ product }) {
     addItem(completeProduct);
   };
 
-  // Handle image URL - construct full URL if needed
   const getImageUrl = (imagePath) => {
     if (!imagePath) return '/placeholder-product.svg';
     if (imagePath.startsWith('http')) return imagePath;
     
-    // Construct full URL from API base
+    let cleanUrl = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+    if (!cleanUrl.startsWith('uploads/')) {
+      cleanUrl = `uploads/${cleanUrl}`;
+    }
+    
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
     const baseUrl = apiBase.replace('/api', '');
-    return `${baseUrl}/uploads/${imagePath}`;
+    return `${baseUrl}/${cleanUrl}`;
   };
 
   const imageUrl = getImageUrl(productData.image);

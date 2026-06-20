@@ -1,14 +1,14 @@
 export const categories = [
-  { id: '1', name: 'Fruits', icon: '🍎', color: 'bg-red-100' },
-  { id: '2', name: 'Vegetables', icon: '🥬', color: 'bg-green-100' },
-  { id: '3', name: 'Dairy', icon: '🥛', color: 'bg-blue-100' },
-  { id: '4', name: 'Bakery', icon: '🍞', color: 'bg-amber-100' },
-  { id: '5', name: 'Meat', icon: '🥩', color: 'bg-rose-100' },
-  { id: '6', name: 'Beverages', icon: '🧃', color: 'bg-orange-100' },
-  { id: '7', name: 'Snacks', icon: '🍿', color: 'bg-yellow-100' },
-  { id: '8', name: 'Frozen', icon: '🧊', color: 'bg-cyan-100' },
-  { id: '9', name: 'Home & Kitchen', icon: '🏠', color: 'bg-purple-100' },
-  { id: '10', name: 'Personal Care', icon: '🧴', color: 'bg-pink-100' },
+  { id: '1', name: 'Fruits', icon: '🍎', color: 'bg-red-100', image: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=200&h=200&fit=crop' },
+  { id: '2', name: 'Vegetables', icon: '🥬', color: 'bg-green-100', image: 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?w=200&h=200&fit=crop' },
+  { id: '3', name: 'Dairy', icon: '🥛', color: 'bg-blue-100', image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?w=200&h=200&fit=crop' },
+  { id: '4', name: 'Bakery', icon: '🍞', color: 'bg-amber-100', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200&h=200&fit=crop' },
+  { id: '5', name: 'Meat', icon: '🥩', color: 'bg-rose-100', image: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=200&h=200&fit=crop' },
+  { id: '6', name: 'Beverages', icon: '🧃', color: 'bg-orange-100', image: 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=200&h=200&fit=crop' },
+  { id: '7', name: 'Snacks', icon: '🍿', color: 'bg-yellow-100', image: 'https://images.unsplash.com/photo-1599599810694-b5b37304c041?w=200&h=200&fit=crop' },
+  { id: '8', name: 'Frozen', icon: '🧊', color: 'bg-cyan-100', image: 'https://images.unsplash.com/photo-1570197788417-0e82375c9371?w=200&h=200&fit=crop' },
+  { id: '9', name: 'Home & Kitchen', icon: '🏠', color: 'bg-purple-100', image: 'https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?w=200&h=200&fit=crop' },
+  { id: '10', name: 'Personal Care', icon: '🧴', color: 'bg-pink-100', image: 'https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=200&h=200&fit=crop' },
 ];
 
 export const subCategories = [

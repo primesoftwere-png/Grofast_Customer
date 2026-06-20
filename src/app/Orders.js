@@ -20,39 +20,39 @@ import toast from "react-hot-toast";
 const statusConfig = {
   DELIVERED: {
     label: "Delivered",
-    className: "bg-primary/15 text-green-dark",
+    className: "bg-green-100 text-green-700 border border-green-200",
   },
   PENDING: {
     label: "Pending",
-    className: "bg-secondary text-secondary-foreground",
+    className: "bg-yellow-100 text-yellow-700 border border-yellow-200",
   },
   CONFIRMED: {
     label: "Confirmed",
-    className: "bg-blue-100 text-blue-700",
+    className: "bg-blue-100 text-blue-700 border border-blue-200",
   },
   PREPARING: {
     label: "Preparing",
-    className: "bg-muted text-muted-foreground",
+    className: "bg-purple-100 text-purple-700 border border-purple-200",
   },
   CANCELLED: {
     label: "Cancelled",
-    className: "bg-destructive/15 text-destructive",
+    className: "bg-red-100 text-red-700 border border-red-200",
   },
   "ON_THE_WAY": {
     label: "On the Way",
-    className: "bg-secondary text-secondary-foreground",
+    className: "bg-indigo-100 text-indigo-700 border border-indigo-200",
   },
   ASSIGNED: {
     label: "Assigned",
-    className: "bg-secondary text-secondary-foreground",
+    className: "bg-cyan-100 text-cyan-700 border border-cyan-200",
   },
   PICKED_UP: {
     label: "Picked Up",
-    className: "bg-secondary text-secondary-foreground",
+    className: "bg-teal-100 text-teal-700 border border-teal-200",
   },
   IN_TRANSIT: {
     label: "In Transit",
-    className: "bg-secondary text-secondary-foreground",
+    className: "bg-sky-100 text-sky-700 border border-sky-200",
   },
 };
 

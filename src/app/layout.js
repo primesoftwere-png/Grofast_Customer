@@ -3,6 +3,7 @@ import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { Toaster } from "react-hot-toast";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import AIChatBot from "@/components/AIChatBot";
 
 const poppins = Poppins({
   weight: ['300', '400', '500', '600', '700'],
@@ -48,6 +49,7 @@ export default function RootLayout({ children }) {
               },
             }}
           />
+          <AIChatBot />
           </CartProvider>
         </GoogleOAuthProvider>
       </body>

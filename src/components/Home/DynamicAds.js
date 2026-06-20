@@ -6,10 +6,18 @@ import { ArrowRight } from "lucide-react";
 export default function DynamicAds({ ad }) {
   if (!ad) return null;
 
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/placeholder-product.svg';
+    if (imagePath.startsWith('http')) return imagePath;
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const baseUrl = apiBase.replace('/api', '');
+    return `${baseUrl}/uploads/${imagePath}`;
+  };
+
   const content = (
     <>
       <img
-        src={ad.image}
+        src={getImageUrl(ad.image)}
         alt={ad.title || "Advertisement"}
         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
       />

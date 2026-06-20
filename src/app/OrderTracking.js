@@ -157,6 +157,20 @@ export default function OrderTracking({ token }) {
   const displayRider = deliveryBoy || orderData?.deliveryBoyId || orderData?.deliveryBoy;
   const displayOtp = liveOtp?.code || liveOtp || orderData?.deliveryOTP?.code || orderData?.deliveryOtp || orderData?.otp;
 
+  const getImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    let cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    if (!cleanUrl.startsWith('uploads/')) {
+      cleanUrl = `uploads/${cleanUrl}`;
+    }
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+    const serverUrl = baseUrl.replace('/api', '');
+    return `${serverUrl}/${cleanUrl}`;
+  };
+
+  const riderImage = getImageUrl(displayRider?.profileImage) || "delivery_boy.jpg";
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -176,10 +190,10 @@ export default function OrderTracking({ token }) {
         <div className="relative rounded-3xl overflow-hidden bg-muted h-64 md:h-80 mb-6 shadow z-0">
           
           <LiveTrackingMap 
-            liveLocation={deliveryLocation}
+            liveLocation={deliveryLocation || getShopLocation()}
             shopLocation={getShopLocation()}
             customerLocation={getCustomerLocation()}
-            deliveryBoyImage={displayRider?.profileImage}
+            deliveryBoyImage={riderImage}
           />
 
           {/* Rider Card */}
@@ -188,8 +202,8 @@ export default function OrderTracking({ token }) {
               
               <div className="flex gap-3 items-center">
                 <img
-                  src={displayRider?.profileImage || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100"}
-                  className="w-12 h-12 rounded-full object-cover"
+                  src={riderImage}
+                  className="w-12 h-12 rounded-full object-contain bg-white p-1"
                   alt="Delivery Partner"
                 />
                 <div>
@@ -399,4 +413,4 @@ export default function OrderTracking({ token }) {
       </main>
     </div>
   );
-}
+}

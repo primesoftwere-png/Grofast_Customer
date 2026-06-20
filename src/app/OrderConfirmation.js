@@ -218,7 +218,7 @@ export default function OrderConfirmation({ token }) {
           <div className="flex flex-col gap-3">
             
             <Link
-              href={`/orders/${token}`}
+              href={`/tracking/${token}`}
               className="bg-primary text-primary-foreground py-3 rounded-xl font-semibold text-center"
             >
               Track Order
