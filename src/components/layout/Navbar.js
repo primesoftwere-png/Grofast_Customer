@@ -318,14 +318,14 @@ export default function Navbar() {
         </div>
 
         {/* Main navbar */}
-        <div className="flex items-center gap-2 sm:gap-3 py-2.5 sm:py-3 px-2 sm:px-4">
+        <div className="flex items-center gap-1 sm:gap-3 py-2 sm:py-3 px-1.5 sm:px-4 min-w-0">
           
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(true)}
-            className="lg:hidden text-primary-foreground hover:bg-primary-foreground/10 p-1.5 sm:p-2 rounded shrink-0"
+            className="lg:hidden text-primary-foreground hover:bg-primary-foreground/10 p-1 sm:p-2 rounded shrink-0"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
 
           {/* Mobile Sidebar */}
@@ -416,18 +416,18 @@ export default function Navbar() {
 
           {/* Search */}
           <div className="flex-1 min-w-0 relative" ref={searchRef}>
-            <form onSubmit={handleSearch}>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+            <form onSubmit={handleSearch} className="w-full min-w-0">
+              <div className="relative w-full min-w-0">
+                <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
                 <input
                   type="text"
                   placeholder="Search groceries..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-background rounded-xl pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-background/50"
+                  className="w-full min-w-0 bg-background rounded-xl pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-background/50"
                 />
                 {isAiSearching && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 shrink-0">
                     <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                   </div>
                 )}
@@ -494,8 +494,8 @@ export default function Navbar() {
 
           {/* Cart */}
           <Link href="/cart" className="relative shrink-0">
-            <button className="text-primary-foreground hover:bg-primary-foreground/10 p-1.5 sm:p-2 rounded relative">
-              <ShoppingCart className="w-5 h-5" />
+            <button className="text-primary-foreground hover:bg-primary-foreground/10 p-1 sm:p-2 rounded relative">
+              <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
 
               {totalItems > 0 && (
                 <span className="absolute -top-1 -right-1 min-w-[18px] sm:min-w-[20px] h-[18px] sm:h-5 bg-secondary text-[10px] sm:text-xs font-bold rounded-full flex items-center justify-center text-secondary-foreground px-1 sm:px-1.5 shadow-md">
@@ -508,13 +508,13 @@ export default function Navbar() {
           {/* Mobile Auth Icon */}
           {isLoggedIn ? (
             <Link href="/profile" className="sm:hidden shrink-0">
-              <button className="text-primary-foreground hover:bg-primary-foreground/10 p-1.5 rounded">
+              <button className="text-primary-foreground hover:bg-primary-foreground/10 p-1 rounded">
                 <User className="w-5 h-5" />
               </button>
             </Link>
           ) : (
             <Link href="/auth" className="sm:hidden shrink-0">
-              <button className="text-primary-foreground hover:bg-primary-foreground/10 p-1.5 rounded">
+              <button className="text-primary-foreground hover:bg-primary-foreground/10 p-1 rounded">
                 <LogIn className="w-5 h-5" />
               </button>
             </Link>
