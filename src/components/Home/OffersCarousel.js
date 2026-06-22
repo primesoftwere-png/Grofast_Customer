@@ -70,9 +70,15 @@ export default function OffersCarousel() {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return '/placeholder-product.svg';
     if (imagePath.startsWith('http')) return imagePath;
+    
+    // Clean up the path
+    const cleanPath = imagePath.replace(/^[/\\]+/, '');
+    
+    // Get base URL safely
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-    const baseUrl = apiBase.replace('/api', '');
-    return `${baseUrl}/uploads/${imagePath}`;
+    const baseUrl = apiBase.replace(/\/api\/?$/, '');
+    
+    return `${baseUrl}/${cleanPath.startsWith('uploads/') ? cleanPath : `uploads/${cleanPath}`}`;
   };
 
   if (isLoading) return null;
