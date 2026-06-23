@@ -201,7 +201,7 @@ export default function Navbar() {
       <div className="container mx-auto">
         
         {/* Top bar */}
-        <div className="flex items-center justify-between py-2 px-2 sm:px-4 border-b border-primary-foreground/10 gap-2 overflow-hidden">
+        <div className="flex items-center justify-between py-2 px-4 border-b border-primary-foreground/10 gap-2 overflow-hidden w-full min-w-0">
           
           {/* Logo */}
           <Link href="/" className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -251,17 +251,17 @@ export default function Navbar() {
               <span>15-20 min</span>
             </div>
 
-            {/* Desktop Login/User Menu */}
+            {/* Desktop and Mobile Login/User Menu */}
             {isLoggedIn ? (
-              <div className="hidden sm:block relative">
+              <div className="relative">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2.5 bg-white/10 hover:bg-white/25 text-white px-3 py-1.5 rounded-full transition-all duration-300 border border-white/20 shadow-sm hover:scale-105 active:scale-95 transform"
+                  className="flex items-center gap-1.5 sm:gap-2.5 bg-white/10 hover:bg-white/25 text-white px-1.5 sm:px-3 py-1.5 rounded-full transition-all duration-300 border border-white/20 shadow-sm hover:scale-105 active:scale-95 transform"
                 >
-                  <div className="w-7 h-7 bg-white text-primary rounded-full flex items-center justify-center font-bold text-sm">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 bg-white text-primary rounded-full flex items-center justify-center font-bold text-xs sm:text-sm">
                     {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                   </div>
-                  <span className="font-semibold text-sm max-w-[100px] truncate">{user?.name?.split(' ')[0] || 'User'}</span>
+                  <span className="hidden sm:inline font-semibold text-sm max-w-[100px] truncate">{user?.name?.split(' ')[0] || 'User'}</span>
                 </button>
 
                 {/* User Dropdown */}
@@ -308,9 +308,9 @@ export default function Navbar() {
               </div>
             ) : (
               <Link href="/auth">
-                <button className="hidden sm:flex items-center gap-2 font-semibold bg-white text-primary px-5 py-2 rounded-full hover:bg-gray-50 transition-all duration-300 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:scale-105 active:scale-95 active:translate-y-0 transform">
+                <button className="flex items-center gap-1.5 sm:gap-2 font-semibold bg-white text-primary px-3 sm:px-5 py-1.5 sm:py-2 rounded-full hover:bg-gray-50 transition-all duration-300 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:scale-105 active:scale-95 active:translate-y-0 transform">
                   <LogIn className="w-4 h-4" /> 
-                  <span>Login</span>
+                  <span className="hidden sm:inline">Login</span>
                 </button>
               </Link>
             )}
@@ -318,7 +318,7 @@ export default function Navbar() {
         </div>
 
         {/* Main navbar */}
-        <div className="flex items-center gap-1 sm:gap-3 py-2 sm:py-3 px-1.5 sm:px-4 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-3 py-2 sm:py-3 px-4 min-w-0 w-full">
           
           {/* Mobile Menu Button */}
           <button

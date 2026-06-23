@@ -166,12 +166,33 @@ export default function Cart() {
   // Get image URL helper
   const getImageUrl = (imagePath) => {
     if (!imagePath) return "/placeholder-product.svg";
-    if (imagePath.startsWith("http")) return imagePath;
+    
+    let pathString = imagePath;
+    
+    if (typeof pathString === 'string' && pathString.startsWith('[') && pathString.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(pathString);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          pathString = parsed[0];
+        }
+      } catch (e) {}
+    }
+    
+    if (Array.isArray(pathString)) {
+      pathString = pathString[0];
+    }
+    
+    if (typeof pathString !== 'string') return "/placeholder-product.svg";
+    if (pathString.startsWith("http")) return pathString;
 
-    const apiBase =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-    const baseUrl = apiBase.replace("/api", "");
-    return `${baseUrl}/uploads/${imagePath}`;
+    // Clean up the path
+    const cleanPath = pathString.replace(/^[/\\]+/, '');
+    
+    // Get base URL safely
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const baseUrl = apiBase.replace(/\/api\/?$/, "");
+    
+    return `${baseUrl}/${cleanPath.startsWith('uploads/') ? cleanPath : `uploads/${cleanPath}`}`;
   };
 
   const handleApplyCoupon = async () => {
@@ -181,7 +202,7 @@ export default function Cart() {
     }
 
     try {
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
       const res = await fetch(`${apiBaseUrl}/customer/coupons/validate`, {
         method: "POST",
         headers: {
@@ -669,7 +690,7 @@ export default function Cart() {
   // Loading state
   if (isLoadingCart) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background overflow-x-hidden">
         <Navbar />
         <main className="container mx-auto px-4 py-12">
           <div className="flex items-center justify-center h-64">
@@ -685,7 +706,7 @@ export default function Cart() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background overflow-x-hidden">
         <Navbar />
 
         <main className="container mx-auto px-4 py-12 text-center">
@@ -713,7 +734,7 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar />
 
       <main className="container mx-auto px-4 py-6">
@@ -754,9 +775,9 @@ export default function Cart() {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 w-full min-w-0">
           {/* Items */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-4 min-w-0">
             {items.map(({ product, quantity }) => {
               const productId = product._id || product.id;
               const productName = product.productName || product.name;
@@ -769,13 +790,13 @@ export default function Cart() {
               return (
                 <article
                   key={productId}
-                  className="rounded-xl bg-card border border-border p-3 sm:p-4 flex gap-3 sm:gap-4 animate-slide-up"
+                  className="rounded-xl bg-card border border-border p-3 sm:p-4 flex gap-3 sm:gap-4 animate-slide-up w-full min-w-0"
                 >
                   <Link href={`/product/${productId}`} className="shrink-0">
                     <img
                       src={getImageUrl(productImage)}
                       alt={productName}
-                      className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl"
+                      className="w-16 h-16 sm:w-24 sm:h-24 object-cover rounded-xl"
                       onError={(e) => {
                         e.target.onerror = null;
                         e.target.src = "/placeholder-product.svg";
@@ -806,36 +827,32 @@ export default function Cart() {
                       </button>
                     </div>
 
-                    <div className="flex justify-between items-center mt-3 sm:mt-4 gap-2 flex-wrap">
+                    <div className="flex justify-between items-center mt-2 sm:mt-4 gap-2">
                       {/* Quantity */}
-                      <div className="flex items-center gap-1 sm:gap-2">
+                      <div className="flex items-center justify-between bg-primary/10 rounded-lg p-1 min-w-0 w-[90px] sm:w-[100px] shrink-0">
                         <button
-                          onClick={() =>
-                            decreaseItem(productId)
-                          }
-                          className="bg-muted px-2 py-1 sm:py-1.5 rounded hover:bg-muted/80 transition"
+                          onClick={() => decreaseItem(productId)}
+                          className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center bg-white rounded-md shadow-sm hover:bg-primary hover:text-white transition-colors text-primary"
                           aria-label="Decrease quantity"
                         >
-                          <Minus className="w-3 h-3" />
+                          <Minus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                         </button>
 
-                        <span className="w-6 sm:w-8 text-center text-sm font-medium">
+                        <span className="font-semibold text-primary text-sm min-w-[16px] text-center">
                           {quantity}
                         </span>
 
                         <button
-                          onClick={() =>
-                            addItem(product)
-                          }
+                          onClick={() => addItem(product)}
                           disabled={isStockLimitReached}
-                          className={`px-2 py-1 sm:py-1.5 rounded transition ${isStockLimitReached ? 'bg-muted/50 opacity-50 cursor-not-allowed' : 'bg-muted hover:bg-muted/80'}`}
+                          className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center bg-white rounded-md shadow-sm transition-colors text-primary ${isStockLimitReached ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary hover:text-white'}`}
                           aria-label="Increase quantity"
                         >
-                          <Plus className="w-3 h-3" />
+                          <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                         </button>
                       </div>
 
-                      <div className="text-right shrink-0 ml-auto">
+                      <div className="text-right shrink-0">
                         <span className="font-bold text-sm sm:text-base">
                           ₹{(productPrice * quantity).toFixed(2)}
                         </span>
@@ -851,7 +868,7 @@ export default function Cart() {
           </div>
 
           {/* Summary */}
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0 w-full">
             {/* Address */}
             <div className="rounded-xl bg-card border border-border p-3 sm:p-4">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3">

@@ -12,6 +12,8 @@ import {
   Bike,
   Store,
   Truck,
+  Download,
+  FileText
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import { useOrderTracking } from "@/hooks/useOrderTracking";
@@ -82,14 +84,33 @@ export default function OrderTracking({ token }) {
         if (data.success && data.data) {
           setOrderData(data.data);
           setCurrentStep(getStatusStep(data.data.orderStatus));
+          fetchShopDetails(data.data, apiBaseUrl);
         } else if (data.success && data.order) {
           setOrderData(data.order);
           setCurrentStep(getStatusStep(data.order.orderStatus));
+          fetchShopDetails(data.order, apiBaseUrl);
         }
       } catch (error) {
         console.error('❌ Error fetching order for tracking:', error);
       } finally {
         setIsLoading(false);
+      }
+    };
+
+    const fetchShopDetails = async (order, apiBaseUrl) => {
+      try {
+        const shopRef = order.shop || order.shopId;
+        const shopIdString = typeof shopRef === 'string' ? shopRef : shopRef?._id;
+        
+        if (shopIdString && (!shopRef?.shopName && !shopRef?.name && !shopRef?.phone)) {
+          const shopRes = await fetch(`${apiBaseUrl}/customer/shop/${shopIdString}`);
+          const shopData = await shopRes.json();
+          if (shopData.success && shopData.data) {
+             setOrderData(prev => ({...prev, shopDetails: shopData.data}));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch shop details", err);
       }
     };
 
@@ -156,6 +177,7 @@ export default function OrderTracking({ token }) {
   const currentStatusDisplay = liveStatus || orderData?.orderStatus || "PENDING";
   const displayRider = deliveryBoy || orderData?.deliveryBoyId || orderData?.deliveryBoy;
   const displayOtp = liveOtp?.code || liveOtp || orderData?.deliveryOTP?.code || orderData?.deliveryOtp || orderData?.otp;
+  const shopInfo = orderData?.shopDetails || orderData?.shop || orderData?.shopId;
 
   const getImageUrl = (url) => {
     if (!url) return null;
@@ -172,22 +194,38 @@ export default function OrderTracking({ token }) {
   const riderImage = getImageUrl(displayRider?.profileImage) || "delivery_boy.jpg";
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <div className="min-h-screen bg-background print:bg-white">
+      <div className="print:hidden">
+        <Navbar />
+      </div>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6 print:py-0 print:px-0 max-w-4xl">
         
         {/* Back */}
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-muted-foreground mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </Link>
+        <div className="print:hidden">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-muted-foreground mb-6 hover:text-primary transition-colors w-fit"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
+          </Link>
+        </div>
+
+        {/* Invoice Header (Only visible when printing) */}
+        <div className="hidden print:block mb-8 border-b pb-4">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-primary">GroFast</h1>
+            <div className="text-right">
+              <h2 className="text-xl font-bold">INVOICE</h2>
+              <p className="text-sm text-gray-500">Order #{orderData?.orderNumber || token}</p>
+              <p className="text-sm text-gray-500">{orderData ? formatTime(orderData.createdAt) : ""}</p>
+            </div>
+          </div>
+        </div>
 
         {/* Map */}
-        <div className="relative rounded-3xl overflow-hidden bg-muted h-64 md:h-80 mb-6 shadow z-0">
+        <div className="relative rounded-3xl overflow-hidden bg-muted h-64 md:h-80 mb-6 shadow z-0 print:hidden">
           
           <LiveTrackingMap 
             liveLocation={deliveryLocation || getShopLocation()}
@@ -231,7 +269,7 @@ export default function OrderTracking({ token }) {
 
         {/* Delivery OTP */}
         {displayOtp && currentStatusDisplay !== 'DELIVERED' && (
-          <div className="rounded-xl bg-primary/5 p-6 shadow mb-6 border border-primary/20 text-center relative overflow-hidden">
+          <div className="rounded-xl bg-primary/5 p-6 shadow mb-6 border border-primary/20 text-center relative overflow-hidden print:hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-primary/30"></div>
             <p className="text-sm text-primary font-bold mb-4 uppercase tracking-wider">Delivery Verification PIN</p>
             <div className="flex justify-center gap-2 sm:gap-3">
@@ -249,7 +287,7 @@ export default function OrderTracking({ token }) {
         )}
 
         {/* Timeline */}
-        <div className="rounded-xl bg-background p-6 shadow mb-6 border border-border">
+        <div className="rounded-xl bg-background p-6 shadow mb-6 border border-border print:hidden">
           
           <div className="flex justify-between items-center mb-6">
             <h2 className="font-semibold text-lg">Order Status</h2>
@@ -310,33 +348,59 @@ export default function OrderTracking({ token }) {
         </div>
 
         {/* Shop */}
-        {(orderData?.shop || orderData?.shopId) && (
-          <div className="rounded-xl bg-background p-4 shadow mb-6 flex items-center gap-4 border border-border">
-            <img
-              src={(orderData.shop?.image || orderData.shop?.logo || orderData.shopId?.image) || "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=100"}
-              className="w-16 h-16 rounded-xl object-cover"
-              alt={(orderData.shop?.name || orderData.shopId?.shopName) || "Shop"}
-            />
-            <div className="flex-1">
-              <p className="font-medium">{(orderData.shop?.name || orderData.shopId?.shopName) || "Fresh Mart"}</p>
-              <p className="text-sm text-muted-foreground">
-                {(orderData.shop?.address || orderData.shopId?.address) || "123 Market Street"}
-              </p>
-            </div>
+        {shopInfo && (
+          <div className="rounded-xl bg-background p-5 shadow mb-6 border border-border print:shadow-none print:border-none print:p-0">
+            <h2 className="font-semibold text-lg mb-4 flex items-center gap-2 text-foreground">
+              <Store className="w-5 h-5 text-primary" />
+              Store Details
+            </h2>
+            <div className="flex items-start sm:items-center gap-4">
+              <img
+                src={getImageUrl(shopInfo.image || shopInfo.logo || shopInfo.shopImage) || "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=100"}
+                className="w-16 h-16 rounded-xl object-cover print:hidden"
+                alt={shopInfo.name || shopInfo.shopName || "Shop"}
+              />
+              <div className="flex-1 space-y-1.5">
+                <p className="font-semibold text-base sm:text-lg">{shopInfo.name || shopInfo.shopName || "Fresh Mart"}</p>
+                <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <MapPin className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p>{shopInfo.address || shopInfo.shopAddress || "123 Market Street"}</p>
+                </div>
+                {(shopInfo.phone || shopInfo.contactNumber || shopInfo.shopkeeperId?.phone) && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Phone className="w-4 h-4 shrink-0" />
+                    <p>{shopInfo.phone || shopInfo.contactNumber || shopInfo.shopkeeperId?.phone}</p>
+                  </div>
+                )}
+              </div>
 
-            <Link href={`/chat/shop/${orderData.shop?._id || orderData.shopId?._id || (typeof orderData.shopId === 'string' ? orderData.shopId : 'shop1')}`}>
-              <button className="border px-3 py-2 rounded-md hover:bg-muted transition">
-                <MessageCircle className="w-5 h-5" />
-              </button>
-            </Link>
+              <div className="print:hidden self-start sm:self-auto">
+                <Link href={`/chat/shop/${shopInfo._id || (typeof shopInfo === 'string' ? shopInfo : 'shop1')}`}>
+                  <button className="border border-primary/20 text-primary bg-primary/5 px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center gap-2 text-sm font-medium">
+                    <MessageCircle className="w-4 h-4" />
+                    <span className="hidden sm:inline">Contact Store</span>
+                  </button>
+                </Link>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Summary */}
-        <div className="rounded-xl bg-background p-6 shadow border border-border">
-          <h2 className="font-semibold text-lg mb-4">
-            Order Summary
-          </h2>
+        <div className="rounded-xl bg-background p-6 shadow border border-border print:shadow-none print:border-none print:p-0 print:mt-8">
+          <div className="flex justify-between items-center mb-6 border-b border-border pb-4 print:border-black">
+            <h2 className="font-semibold text-lg flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary print:hidden" />
+              Order Summary
+            </h2>
+            <button 
+              onClick={() => window.print()}
+              className="flex items-center gap-2 text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 px-4 py-2 rounded-lg transition-colors print:hidden"
+            >
+              <Download className="w-4 h-4" />
+              Download Invoice
+            </button>
+          </div>
 
           {isLoading ? (
             <div className="flex justify-center py-4">

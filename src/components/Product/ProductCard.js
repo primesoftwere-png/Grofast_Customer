@@ -64,16 +64,33 @@ export default function ProductCard({ product }) {
 
   const getImageUrl = (imagePath) => {
     if (!imagePath) return '/placeholder-product.svg';
-    if (imagePath.startsWith('http')) return imagePath;
     
-    let cleanUrl = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-    if (!cleanUrl.startsWith('uploads/')) {
-      cleanUrl = `uploads/${cleanUrl}`;
+    let pathString = imagePath;
+    
+    if (typeof pathString === 'string' && pathString.startsWith('[') && pathString.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(pathString);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          pathString = parsed[0];
+        }
+      } catch (e) {}
     }
     
+    if (Array.isArray(pathString)) {
+      pathString = pathString[0];
+    }
+    
+    if (typeof pathString !== 'string') return '/placeholder-product.svg';
+    if (pathString.startsWith('http')) return pathString;
+    
+    // Clean up the path
+    const cleanPath = pathString.replace(/^[/\\]+/, '');
+    
+    // Get base URL safely
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-    const baseUrl = apiBase.replace('/api', '');
-    return `${baseUrl}/${cleanUrl}`;
+    const baseUrl = apiBase.replace(/\/api\/?$/, '');
+    
+    return `${baseUrl}/${cleanPath.startsWith('uploads/') ? cleanPath : `uploads/${cleanPath}`}`;
   };
 
   const imageUrl = getImageUrl(productData.image);
