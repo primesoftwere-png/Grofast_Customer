@@ -80,6 +80,11 @@ class SocketService {
       this.emit('order-status-update', data);
     });
 
+    this.socket.on('tracking-status', (data) => {
+      console.log('📦 Tracking status update:', data);
+      this.emit('order-status-update', data);
+    });
+
     // Live location updates
     this.socket.on('live-location', (data) => {
       console.log('📍 Live location update:', data);

@@ -67,7 +67,7 @@ export default function LiveTrackingMap({ liveLocation, shopLocation, customerLo
     className: 'custom-leaflet-icon',
     html: `<div style="position: relative; display: flex; flex-direction: column; align-items: center;">
       <div style="width: 46px; height: 46px; border-radius: 50%; border: 3px solid #f97316; box-shadow: 0 4px 10px rgba(0,0,0,0.3); overflow: hidden; display: flex; align-items: center; justify-content: center; background-color: white; position: relative; z-index: 2;">
-        <img src="${'delivery_boy.jpg'}" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;" alt="Delivery Partner" />
+        <img src="${deliveryBoyImage || '/delivery_boy.jpg'}" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;" alt="Delivery Partner" />
       </div>
       <div style="width: 14px; height: 14px; background-color: #f97316; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%) rotate(45deg); z-index: 1;"></div>
     </div>`,

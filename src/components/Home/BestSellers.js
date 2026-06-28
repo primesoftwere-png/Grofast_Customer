@@ -99,8 +99,8 @@ export default function BestSellers() {
         ref={scrollRef}
         className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4"
       >
-        {products.map((product) => (
-          <div key={product.id || product._id} className="w-44 sm:w-48 shrink-0">
+        {products.map((product, index) => (
+          <div key={`${product.id || product._id}-${index}`} className="w-44 sm:w-48 shrink-0">
             <ProductCard product={product} />
           </div>
         ))}

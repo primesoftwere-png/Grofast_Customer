@@ -5,8 +5,9 @@ import socketService from '@/services/socket.service';
 /**
  * Custom hook for real-time order tracking
  * @param {string} orderId - Order ID to track
+ * @param {string} orderNumber - Order Number to track
  */
-export function useOrderTracking(orderId) {
+export function useOrderTracking(orderId, orderNumber) {
   const [orderStatus, setOrderStatus] = useState(null);
   const [deliveryLocation, setDeliveryLocation] = useState(null);
   const [deliveryBoy, setDeliveryBoy] = useState(null);
@@ -59,6 +60,15 @@ export function useOrderTracking(orderId) {
       // Subscribe to events
       socketService.on('order-status-update', handleOrderStatus);
       socketService.on('live-location-update', handleLiveLocation);
+      
+      // Join tracking room
+      if (orderNumber) {
+        socket.emit('join-tracking', orderNumber, (res) => {
+          console.log(`Joined tracking room for ${orderNumber}:`, res);
+        });
+      } else {
+        console.warn('No orderNumber provided to join tracking room');
+      }
     }
 
     // Fetch location
@@ -89,16 +99,12 @@ export function useOrderTracking(orderId) {
 
     fetchLocation();
     
-    // Poll every 10 seconds as requested
-    const intervalId = setInterval(fetchLocation, 10000);
-
     // Cleanup
     return () => {
       socketService.off('order-status-update', handleOrderStatus);
       socketService.off('live-location-update', handleLiveLocation);
-      clearInterval(intervalId);
     };
-  }, [orderId]); // Re-run when orderId changes
+  }, [orderId, orderNumber]); // Re-run when orderId or orderNumber changes
 
   return {
     orderStatus,

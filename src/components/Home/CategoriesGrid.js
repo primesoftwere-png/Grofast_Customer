@@ -115,7 +115,7 @@ export default function CategoriesGrid({
       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
         {categories.map((category, index) => (
           <button
-            key={category._id}
+            key={`${category._id}-${index}`}
             onClick={(e) => {
               e.preventDefault();
               if (selectedCategory === category._id) {

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 import Navbar from "@/components/layout/Navbar";
 import HeroBanner from "@/components/Home/HeroBanner";
@@ -84,7 +85,7 @@ function HomeContent() {
         {/* Dynamic Category Carousels - Display products by category */}
         {categories.length > 0 ? (
           categories.map((category, index) => (
-            <React.Fragment key={category._id}>
+            <React.Fragment key={`${category._id || category.id || 'cat'}-${index}`}>
               <CategoryCarousel 
                 categoryName={category.categoryName} 
                 icon={getCategoryIcon(category.categoryName)}
@@ -147,7 +148,11 @@ function getCategoryIcon(categoryName) {
 
 export default function HomePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    }>
       <HomeContent />
     </Suspense>
   );

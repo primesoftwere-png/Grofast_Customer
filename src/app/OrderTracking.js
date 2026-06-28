@@ -39,13 +39,16 @@ const getStatusStep = (status) => {
     'PENDING': 1,
     'SHOP_ACCEPTED': 2,
     'CONFIRMED': 2,
-    'ASSIGNED': 2,
-    'ASSIGNED_TO_DELIVERY': 2,
+    'ACCEPTED': 2,
     'PREPARING': 2,
-    'PICKED_UP': 3,
-    'IN_TRANSIT': 3,
-    'ON_THE_WAY': 3,
-    'DELIVERED': 4
+    'READY_FOR_PICKUP': 2,
+    'ASSIGNED': 3,
+    'ASSIGNED_TO_DELIVERY': 3,
+    'PICKED_UP': 4,
+    'IN_TRANSIT': 4,
+    'ON_THE_WAY': 4,
+    'OUT_FOR_DELIVERY': 4,
+    'DELIVERED': 5
   };
   return statusStepMap[status ? status.toUpperCase() : 'PENDING'] || 1;
 };
@@ -55,75 +58,79 @@ export default function OrderTracking({ token }) {
   const [orderData, setOrderData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch order details using token
-  useEffect(() => {
-    const fetchOrderByToken = async () => {
-      try {
-        if (!token) {
-          console.log('⚠️ No token provided');
-          setIsLoading(false);
-          return;
-        }
-        
-        console.log('📤 Fetching order for tracking with token:', token);
-        
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-        const accessToken = localStorage.getItem('token');
-        
-        const response = await fetch(`${apiBaseUrl}/order/recent/${token}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        const data = await response.json();
-        console.log('📥 Order tracking response:', data);
-        
-        if (data.success && data.data) {
-          setOrderData(data.data);
-          setCurrentStep(getStatusStep(data.data.orderStatus));
-          fetchShopDetails(data.data, apiBaseUrl);
-        } else if (data.success && data.order) {
-          setOrderData(data.order);
-          setCurrentStep(getStatusStep(data.order.orderStatus));
-          fetchShopDetails(data.order, apiBaseUrl);
-        }
-      } catch (error) {
-        console.error('❌ Error fetching order for tracking:', error);
-      } finally {
+  // Reusable function to fetch order details using token
+  const fetchOrderByToken = async () => {
+    try {
+      if (!token) {
+        console.log('⚠️ No token provided');
         setIsLoading(false);
+        return;
       }
-    };
-
-    const fetchShopDetails = async (order, apiBaseUrl) => {
-      try {
-        const shopRef = order.shop || order.shopId;
-        const shopIdString = typeof shopRef === 'string' ? shopRef : shopRef?._id;
-        
-        if (shopIdString && (!shopRef?.shopName && !shopRef?.name && !shopRef?.phone)) {
-          const shopRes = await fetch(`${apiBaseUrl}/customer/shop/${shopIdString}`);
-          const shopData = await shopRes.json();
-          if (shopData.success && shopData.data) {
-             setOrderData(prev => ({...prev, shopDetails: shopData.data}));
-          }
+      
+      console.log('📤 Fetching order for tracking with token:', token);
+      
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const accessToken = localStorage.getItem('token');
+      
+      const response = await fetch(`${apiBaseUrl}/order/recent/${token}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
         }
-      } catch (err) {
-        console.error("Failed to fetch shop details", err);
+      });
+      
+      const data = await response.json();
+      console.log('📥 Order tracking response:', data);
+      
+      if (data.success && data.data) {
+        setOrderData(data.data);
+        setCurrentStep(getStatusStep(data.data.orderStatus));
+        fetchShopDetails(data.data, apiBaseUrl);
+      } else if (data.success && data.order) {
+        setOrderData(data.order);
+        setCurrentStep(getStatusStep(data.order.orderStatus));
+        fetchShopDetails(data.order, apiBaseUrl);
       }
-    };
+    } catch (error) {
+      console.error('❌ Error fetching order for tracking:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  const fetchShopDetails = async (order, apiBaseUrl) => {
+    try {
+      const shopRef = order.shop || order.shopId;
+      const shopIdString = typeof shopRef === 'string' ? shopRef : shopRef?._id;
+      
+      if (shopIdString && (!shopRef?.shopName && !shopRef?.name && !shopRef?.phone)) {
+        const shopRes = await fetch(`${apiBaseUrl}/customer/shop/${shopIdString}`);
+        const shopData = await shopRes.json();
+        if (shopData.success && shopData.data) {
+           setOrderData(prev => ({...prev, shopDetails: shopData.data}));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch shop details", err);
+    }
+  };
+
+  // Initial fetch
+  useEffect(() => {
     fetchOrderByToken();
   }, [token]);
 
   // Use the tracking hook
-  const { orderStatus: liveStatus, deliveryLocation, deliveryBoy, otp: liveOtp } = useOrderTracking(orderData?._id);
+  const { orderStatus: liveStatus, deliveryLocation, deliveryBoy, otp: liveOtp } = useOrderTracking(orderData?._id, orderData?.orderNumber || token);
 
-  // Update step when live status changes
+  // Update step and refresh details when live status changes
   useEffect(() => {
     if (liveStatus) {
       setCurrentStep(getStatusStep(liveStatus));
+      
+      // If status changed to ASSIGNED_TO_DELIVERY, PICKED_UP, etc., refresh to get full delivery boy details
+      fetchOrderByToken();
     }
   }, [liveStatus]);
 
@@ -144,17 +151,24 @@ export default function OrderTracking({ token }) {
     },
     {
       id: 3,
-      label: "Out for Delivery",
-      description: "Rider is on the way",
-      icon: Truck,
-      time: currentStep >= 3 ? "Now" : "",
+      label: "Assigned Delivery",
+      description: "Rider assigned",
+      icon: Bike,
+      time: currentStep >= 3 && orderData ? formatTime(orderData.updatedAt) : "",
     },
     {
       id: 4,
+      label: "Out for Delivery",
+      description: "Rider is on the way",
+      icon: Truck,
+      time: currentStep >= 4 ? "Now" : "",
+    },
+    {
+      id: 5,
       label: "Delivered",
       description: "Enjoy your order!",
       icon: Package,
-      time: currentStep >= 4 ? "Delivered" : "",
+      time: currentStep >= 5 ? "Delivered" : "",
     },
   ];
 
@@ -174,7 +188,16 @@ export default function OrderTracking({ token }) {
     return lat && lng ? { lat, lng } : null;
   };
 
-  const currentStatusDisplay = liveStatus || orderData?.orderStatus || "PENDING";
+  const rawStatus = liveStatus || orderData?.orderStatus || "PENDING";
+  let currentStatusDisplay = rawStatus;
+  
+  // Map internal statuses to user-friendly display text
+  if (['PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(rawStatus)) {
+    currentStatusDisplay = 'OUT_FOR_DELIVERY';
+  } else if (['ASSIGNED', 'ASSIGNED_TO_DELIVERY'].includes(rawStatus)) {
+    currentStatusDisplay = 'ASSIGNED_DELIVERY';
+  }
+
   const displayRider = deliveryBoy || orderData?.deliveryBoyId || orderData?.deliveryBoy;
   const displayOtp = liveOtp?.code || liveOtp || orderData?.deliveryOTP?.code || orderData?.deliveryOtp || orderData?.otp;
   const shopInfo = orderData?.shopDetails || orderData?.shop || orderData?.shopId;
@@ -191,7 +214,103 @@ export default function OrderTracking({ token }) {
     return `${serverUrl}/${cleanUrl}`;
   };
 
-  const riderImage = getImageUrl(displayRider?.profileImage) || "delivery_boy.jpg";
+  const riderImage = getImageUrl(displayRider?.profileImage) || "/delivery_boy.jpg";
+
+  const handleDownloadInvoice = async () => {
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const element = document.getElementById('printable-area');
+      if (!element) return;
+      
+      const clone = element.cloneNode(true);
+      
+      // Remove elements that should be hidden in print
+      const hiddenElements = clone.querySelectorAll('.print\\:hidden');
+      hiddenElements.forEach(el => el.parentNode?.removeChild(el));
+      
+      // Show elements that are specifically for print
+      const blockElements = clone.querySelectorAll('.print\\:block');
+      blockElements.forEach(el => {
+        el.classList.remove('hidden');
+        el.style.display = 'block';
+      });
+
+      // FIX: html2canvas crashes on oklch/lab colors.
+      // We comprehensively REMOVE Tailwind color classes, shadows, and rings, and replace with safe inline styles.
+      // MUST use getAttribute('class') because SVGs return SVGAnimatedString for .className!
+      const applySafeColorsAndRemoveClasses = (el) => {
+        let classes = el.getAttribute('class') || '';
+        if (classes && typeof classes === 'string' && classes.length > 0) {
+          
+          // Map of known classes to safe inline styles
+          const styleMap = [
+            { c: 'bg-background', p: 'backgroundColor', v: '#ffffff' },
+            { c: 'bg-muted', p: 'backgroundColor', v: '#f4f6f4' },
+            { c: 'bg-secondary', p: 'backgroundColor', v: '#fdf2c8' },
+            { c: 'bg-secondary/80', p: 'backgroundColor', v: 'rgba(253, 242, 200, 0.8)' },
+            { c: 'bg-primary/5', p: 'backgroundColor', v: 'rgba(134, 216, 96, 0.05)' },
+            { c: 'bg-primary/10', p: 'backgroundColor', v: 'rgba(134, 216, 96, 0.1)' },
+            { c: 'bg-primary/30', p: 'backgroundColor', v: 'rgba(134, 216, 96, 0.3)' },
+            { c: 'bg-primary', p: 'backgroundColor', v: '#86d860' }, // must be after / modifiers
+            { c: 'text-primary', p: 'color', v: '#86d860' },
+            { c: 'text-foreground', p: 'color', v: '#333333' },
+            { c: 'text-muted-foreground', p: 'color', v: '#737373' },
+            { c: 'text-secondary-foreground', p: 'color', v: '#333333' },
+            { c: 'text-green-600', p: 'color', v: '#16a34a' },
+            { c: 'border-border', p: 'borderColor', v: '#e5e7eb' },
+            { c: 'border-primary/20', p: 'borderColor', v: 'rgba(134, 216, 96, 0.2)' },
+            { c: 'text-gray-500', p: 'color', v: '#6b7280' },
+            { c: 'bg-white/90', p: 'backgroundColor', v: 'rgba(255, 255, 255, 0.9)' },
+            { c: 'bg-primary/15', p: 'backgroundColor', v: 'rgba(134, 216, 96, 0.15)' }
+          ];
+
+          let updatedClasses = classes;
+          styleMap.forEach(({ c, p, v }) => {
+            const regex = new RegExp(`\\b${c.replace(/\//g, '\\/')}\\b`, 'g');
+            if (regex.test(classes)) {
+              el.style[p] = v;
+            }
+          });
+          
+          // AGGRESSIVE STRIP: Remove classes that trigger lab() colors in getComputedStyle
+          // This includes shadows, rings, and any color with an opacity modifier (/)
+          updatedClasses = updatedClasses.replace(/\bshadow(-\w+)?\b/g, ''); // all shadows
+          updatedClasses = updatedClasses.replace(/\bring(-\w+)?(\/\d+)?\b/g, ''); // all rings
+          updatedClasses = updatedClasses.replace(/\bbg-\w+\/\d+\b/g, ''); // bg with opacity
+          updatedClasses = updatedClasses.replace(/\btext-\w+\/\d+\b/g, ''); // text with opacity
+          updatedClasses = updatedClasses.replace(/\bborder-\w+\/\d+\b/g, ''); // border with opacity
+          
+          // Remove all theme-based utility classes directly to prevent any leftovers
+          const themeColors = ['primary', 'secondary', 'muted', 'background', 'foreground', 'border', 'accent', 'destructive'];
+          themeColors.forEach(color => {
+            updatedClasses = updatedClasses.replace(new RegExp(`\\bbg-${color}\\b`, 'g'), '');
+            updatedClasses = updatedClasses.replace(new RegExp(`\\btext-${color}\\b`, 'g'), '');
+            updatedClasses = updatedClasses.replace(new RegExp(`\\bborder-${color}\\b`, 'g'), '');
+            updatedClasses = updatedClasses.replace(new RegExp(`\\btext-${color}-foreground\\b`, 'g'), '');
+          });
+
+          if (classes !== updatedClasses) {
+            el.setAttribute('class', updatedClasses.trim().replace(/\s+/g, ' '));
+          }
+        }
+        Array.from(el.children).forEach(applySafeColorsAndRemoveClasses);
+      };
+      
+      applySafeColorsAndRemoveClasses(clone);
+      
+      const opt = {
+        margin:       15,
+        filename:     `Invoice_${orderData?.orderNumber || token}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      html2pdf().set(opt).from(clone).save();
+    } catch (err) {
+      console.error('Failed to generate PDF', err);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background print:bg-white">
@@ -199,7 +318,7 @@ export default function OrderTracking({ token }) {
         <Navbar />
       </div>
 
-      <main className="container mx-auto px-4 py-6 print:py-0 print:px-0 max-w-4xl">
+      <main id="printable-area" className="container mx-auto px-4 py-6 print:py-0 print:px-0 max-w-4xl">
         
         {/* Back */}
         <div className="print:hidden">
@@ -224,66 +343,84 @@ export default function OrderTracking({ token }) {
           </div>
         </div>
 
-        {/* Map */}
-        <div className="relative rounded-3xl overflow-hidden bg-muted h-64 md:h-80 mb-6 shadow z-0 print:hidden">
-          
-          <LiveTrackingMap 
-            liveLocation={deliveryLocation || getShopLocation()}
-            shopLocation={getShopLocation()}
-            customerLocation={getCustomerLocation()}
-            deliveryBoyImage={riderImage}
-          />
-
-          {/* Rider Card */}
-          <div className="absolute bottom-4 left-4 right-4 z-[1000]">
-            <div className="bg-white/90 rounded-xl p-4 flex justify-between items-center shadow">
+        {/* Map and Delivery Info */}
+        {(displayRider || currentStep >= 3) && (
+          <>
+            <div className="relative rounded-3xl overflow-hidden bg-muted h-64 md:h-80 mb-6 shadow z-0 print:hidden">
               
-              <div className="flex gap-3 items-center">
-                <img
-                  src={riderImage}
-                  className="w-12 h-12 rounded-full object-contain bg-white p-1"
-                  alt="Delivery Partner"
-                />
-                <div>
-                  <p className="font-semibold">{displayRider?.name || displayRider?.fullName || "Assigning Rider..."}</p>
-                  <p className="text-sm text-primary font-medium">
-                    {displayRider ? (['IN_TRANSIT', 'ON_THE_WAY', 'PICKED_UP'].includes(currentStatusDisplay) ? 'On the way' : 'Assigned') : 'Finding delivery partner'}
-                  </p>
+              <LiveTrackingMap 
+                liveLocation={deliveryLocation || getShopLocation()}
+                shopLocation={getShopLocation()}
+                customerLocation={getCustomerLocation()}
+                deliveryBoyImage={riderImage}
+              />
+
+              {/* Rider Card */}
+              <div className="absolute bottom-4 left-4 right-4 z-[1000]">
+                <div className="bg-white/90 rounded-xl p-4 flex justify-between items-center shadow">
+                  
+                  <div className="flex gap-3 items-center">
+                    <img
+                      src={riderImage}
+                      className="w-12 h-12 rounded-full object-contain bg-white p-1"
+                      alt="Delivery Partner"
+                    />
+                    <div className="flex-1">
+                      <p className="font-semibold text-lg">{displayRider?.name || displayRider?.fullName || displayRider?.fullname || "Assigning Rider..."}</p>
+                      
+                      {displayRider && (displayRider.vehicleType || displayRider.vehicleNumber) && (
+                        <p className="text-sm text-gray-600 font-medium">
+                          {displayRider.vehicleType ? displayRider.vehicleType.charAt(0).toUpperCase() + displayRider.vehicleType.slice(1) : ''} 
+                          {displayRider.vehicleNumber ? ` • ${displayRider.vehicleNumber}` : ''}
+                        </p>
+                      )}
+                      
+                      <p className="text-sm text-primary font-bold mt-0.5">
+                        {displayRider ? (['IN_TRANSIT', 'ON_THE_WAY', 'PICKED_UP', 'OUT_FOR_DELIVERY'].includes(rawStatus) ? 'On the way' : 'Assigned') : 'Finding delivery partner'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    {displayRider?.phone ? (
+                      <a href={`tel:${displayRider.phone}`} className="p-2 bg-secondary rounded-full hover:bg-secondary/80 transition flex items-center justify-center">
+                        <Phone className="w-5 h-5" />
+                      </a>
+                    ) : (
+                      <button className="p-2 bg-secondary rounded-full hover:bg-secondary/80 transition opacity-50 cursor-not-allowed">
+                        <Phone className="w-5 h-5" />
+                      </button>
+                    )}
+
+                    <Link href={`/chat/delivery/${displayRider?._id || displayRider?.id || 'd1'}`}>
+                      <button className="p-2 bg-secondary rounded-full hover:bg-secondary/80 transition">
+                        <MessageCircle className="w-5 h-5" />
+                      </button>
+                    </Link>
+                  </div>
                 </div>
               </div>
-
-              <div className="flex gap-2">
-                <button className="p-2 bg-secondary rounded-full hover:bg-secondary/80 transition">
-                  <Phone className="w-5 h-5" />
-                </button>
-
-                <Link href={`/chat/delivery/${displayRider?._id || 'd1'}`}>
-                  <button className="p-2 bg-secondary rounded-full hover:bg-secondary/80 transition">
-                    <MessageCircle className="w-5 h-5" />
-                  </button>
-                </Link>
-              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Delivery OTP */}
-        {displayOtp && currentStatusDisplay !== 'DELIVERED' && (
-          <div className="rounded-xl bg-primary/5 p-6 shadow mb-6 border border-primary/20 text-center relative overflow-hidden print:hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-primary/30"></div>
-            <p className="text-sm text-primary font-bold mb-4 uppercase tracking-wider">Delivery Verification PIN</p>
-            <div className="flex justify-center gap-2 sm:gap-3">
-              {String(displayOtp).padStart(6, '0').substring(0, 6).split('').map((char, index) => (
-                <div 
-                  key={index} 
-                  className="w-10 h-12 sm:w-12 sm:h-14 bg-background border-2 border-primary/20 rounded-lg flex items-center justify-center text-2xl sm:text-3xl font-bold text-primary shadow-sm"
-                >
-                  {char}
+            {/* Delivery OTP */}
+            {displayOtp && currentStatusDisplay !== 'DELIVERED' && (
+              <div className="rounded-xl bg-primary/5 p-6 shadow mb-6 border border-primary/20 text-center relative overflow-hidden print:hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-primary/30"></div>
+                <p className="text-sm text-primary font-bold mb-4 uppercase tracking-wider">Delivery Verification PIN</p>
+                <div className="flex justify-center gap-2 sm:gap-3">
+                  {String(displayOtp).padStart(6, '0').substring(0, 6).split('').map((char, index) => (
+                    <div 
+                      key={index} 
+                      className="w-10 h-12 sm:w-12 sm:h-14 bg-background border-2 border-primary/20 rounded-lg flex items-center justify-center text-2xl sm:text-3xl font-bold text-primary shadow-sm"
+                    >
+                      {char}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground mt-4 font-medium">Share this PIN with the rider to confirm your delivery</p>
-          </div>
+                <p className="text-xs text-muted-foreground mt-4 font-medium">Share this PIN with the rider to confirm your delivery</p>
+              </div>
+            )}
+          </>
         )}
 
         {/* Timeline */}
@@ -394,7 +531,7 @@ export default function OrderTracking({ token }) {
               Order Summary
             </h2>
             <button 
-              onClick={() => window.print()}
+              onClick={handleDownloadInvoice}
               className="flex items-center gap-2 text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 px-4 py-2 rounded-lg transition-colors print:hidden"
             >
               <Download className="w-4 h-4" />
@@ -466,7 +603,7 @@ export default function OrderTracking({ token }) {
         </div>
 
         {/* Feedback */}
-        {currentStep === 4 && (
+        {currentStep === 5 && (
           <Link
             href="/feedback"
             className="block mt-6 bg-primary text-primary-foreground py-3 rounded-xl text-center font-semibold hover:opacity-90 transition"

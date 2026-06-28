@@ -205,9 +205,9 @@ export default function Navbar() {
           
           {/* Logo */}
           <Link href="/" className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 relative flex items-center justify-center">
+            <div className="w-24 h-10 sm:w-40 sm:h-14 relative flex items-center justify-center">
               <img 
-                src="Grofast.png" 
+                src="/grofast.png" 
                 alt="GroFast Logo" 
                 className="w-full h-full object-contain"
                 onError={(e) => {
@@ -215,13 +215,10 @@ export default function Navbar() {
                   e.target.nextElementSibling.style.display = 'flex';
                 }}
               />
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-background rounded-lg hidden items-center justify-center">
-                <span className="text-lg sm:text-xl font-bold text-primary">G</span>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-background rounded-lg hidden items-center justify-center">
+                <span className="text-xl sm:text-2xl font-bold text-primary">G</span>
               </div>
             </div>
-            <span className="font-bold text-lg text-primary-foreground hidden sm:block">
-              GroFast
-            </span>
           </Link>
 
           {/* Address Button */}
@@ -443,10 +440,10 @@ export default function Navbar() {
                        <span>AI Powered Results</span>
                        <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px] font-bold">AI</span>
                     </div>
-                    {aiSearchResults.map((product) => (
+                    {aiSearchResults.map((product, index) => (
                       <Link 
-                        key={product._id} 
-                        href={`/product/${product._id}`}
+                        key={`${product._id || product.id || 'res'}-${index}`} 
+                        href={`/product/${product._id || product.id}`}
                         onClick={() => {
                           setAiSearchResults(null);
                           setSearchQuery("");

@@ -152,8 +152,8 @@ export default function CategoryCarousel({ categoryName, icon }) {
         ref={scrollRef}
         className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4"
       >
-        {categoryProducts.map((product) => (
-          <div key={product.id || product._id} className="w-40 sm:w-44 shrink-0">
+        {categoryProducts.map((product, index) => (
+          <div key={`${product.id || product._id}-${index}`} className="w-40 sm:w-44 shrink-0">
             <ProductCard product={product} />
           </div>
         ))}
