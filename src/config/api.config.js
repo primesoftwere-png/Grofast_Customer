@@ -131,7 +131,7 @@ export const API_ENDPOINTS = {
   
   // Feedback Endpoints
   FEEDBACK: {
-    SUBMIT: '/feedback'
+    SUBMIT: (token) => `/review/${token}`
   },
   
   // Payment Endpoints

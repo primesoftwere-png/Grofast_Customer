@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Star,
   Camera,
@@ -19,7 +19,9 @@ import { API_CONFIG } from "@/config/api.config";
 function FeedbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const orderId = searchParams.get("orderId");
+  const params = useParams();
+  const token = params?.token;
+  const orderId = token || searchParams.get("orderId");
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -148,21 +150,18 @@ function FeedbackContent() {
     setIsLoading(true);
     try {
       const payload = {
-        orderId: orderId || "mock-order-123",
-        delivery: {
+        deliveryBoyReview: {
           rating: deliveryRating,
-          packaging: packagingRating,
-          comment: deliveryComment,
-          tip: tip || 0,
+          reviewText: deliveryComment,
         },
-        products: Object.entries(productFeedback).map(([id, fb]) => ({
+        productReviews: Object.entries(productFeedback).map(([id, fb]) => ({
           productId: id,
           rating: fb.rating,
-          comment: fb.comment
+          reviewText: fb.comment
         })).filter(p => p.rating > 0)
       };
 
-      await feedbackAPI.submit(payload);
+      await feedbackAPI.submit(token || orderId || "mock-order-123", payload);
       
       toast.success("Thanks for your feedback!");
       setIsSubmitted(true);

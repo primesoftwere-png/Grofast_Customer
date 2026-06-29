@@ -13,9 +13,9 @@ export const feedbackAPI = {
    * @param {Object} data - Feedback data
    * @returns {Promise} Submission response
    */
-  submit: async (data) => {
+  submit: async (token, data) => {
     try {
-      return await apiClient.post(API_ENDPOINTS.FEEDBACK.SUBMIT, data);
+      return await apiClient.post(API_ENDPOINTS.FEEDBACK.SUBMIT(token), data);
     } catch (error) {
       // If the API doesn't exist yet on backend, we simulate a success response for now
       // This satisfies "make perfect that flow if not have API so please create it"
