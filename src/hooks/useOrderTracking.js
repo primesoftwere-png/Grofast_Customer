@@ -69,6 +69,12 @@ export function useOrderTracking(orderId, orderNumber) {
       } else {
         console.warn('No orderNumber provided to join tracking room');
       }
+      
+      if (orderId && orderId !== orderNumber) {
+        socket.emit('join-tracking', orderId, (res) => {
+          console.log(`Joined tracking room for ${orderId}:`, res);
+        });
+      }
     }
 
     // Fetch location
@@ -99,8 +105,14 @@ export function useOrderTracking(orderId, orderNumber) {
 
     fetchLocation();
     
+    // Set up polling interval for every 5 seconds
+    const locationInterval = setInterval(() => {
+      fetchLocation();
+    }, 5000);
+    
     // Cleanup
     return () => {
+      clearInterval(locationInterval);
       socketService.off('order-status-update', handleOrderStatus);
       socketService.off('live-location-update', handleLiveLocation);
     };
