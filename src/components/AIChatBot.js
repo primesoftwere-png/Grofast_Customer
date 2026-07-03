@@ -123,7 +123,7 @@ export default function AIChatBot() {
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
         {/* Chat Box */}
         {isOpen && (
-          <div className="mb-4 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col transition-all duration-300 transform origin-bottom-right" style={{ height: '500px' }}>
+          <div className="mb-4 w-[calc(100vw-3rem)] sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col transition-all duration-300 transform origin-bottom-right" style={{ height: '500px', maxHeight: 'calc(100vh - 8rem)' }}>
             {/* Header */}
             <div className="bg-primary-600 bg-green-500 text-white p-4 flex justify-between items-center">
               <div className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -37,13 +37,36 @@ function MapUpdater({ liveLocation, shopLocation, customerLocation }) {
   
   useEffect(() => {
     const points = [];
-    if (liveLocation?.lat && liveLocation?.lng) points.push([liveLocation.lat, liveLocation.lng]);
-    if (shopLocation?.lat && shopLocation?.lng) points.push([shopLocation.lat, shopLocation.lng]);
-    if (customerLocation?.lat && customerLocation?.lng) points.push([customerLocation.lat, customerLocation.lng]);
+    
+    console.log('\n🗺️  MAP BOUNDS UPDATE:');
+    
+    if (liveLocation?.lat && liveLocation?.lng) {
+      points.push([liveLocation.lat, liveLocation.lng]);
+      console.log('├─ 🚴 Delivery Boy: [', liveLocation.lat, ',', liveLocation.lng, ']');
+    } else {
+      console.log('├─ 🚴 Delivery Boy: Not available');
+    }
+    
+    if (shopLocation?.lat && shopLocation?.lng) {
+      points.push([shopLocation.lat, shopLocation.lng]);
+      console.log('├─ 🏪 Shop:        [', shopLocation.lat, ',', shopLocation.lng, ']');
+    } else {
+      console.log('├─ 🏪 Shop:        Not available');
+    }
+    
+    if (customerLocation?.lat && customerLocation?.lng) {
+      points.push([customerLocation.lat, customerLocation.lng]);
+      console.log('├─ 🏠 Customer:     [', customerLocation.lat, ',', customerLocation.lng, ']');
+    } else {
+      console.log('├─ 🏠 Customer:     Not available');
+    }
 
     if (points.length > 0) {
       const bounds = L.latLngBounds(points);
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+      console.log('└─ ✅ Map bounds updated with', points.length, 'markers');
+    } else {
+      console.log('└─ ⚠️  No valid coordinates to update map bounds');
     }
   }, [map, liveLocation, shopLocation, customerLocation]);
 
@@ -51,6 +74,40 @@ function MapUpdater({ liveLocation, shopLocation, customerLocation }) {
 }
 
 export default function LiveTrackingMap({ liveLocation, shopLocation, customerLocation, deliveryBoyImage }) {
+  // Track previous location to detect changes
+  const prevLocationRef = useRef(null);
+  
+  // Log when props change
+  useEffect(() => {
+    const hasLocationChanged = 
+      liveLocation && 
+      (!prevLocationRef.current || 
+       prevLocationRef.current.lat !== liveLocation.lat || 
+       prevLocationRef.current.lng !== liveLocation.lng);
+
+    if (hasLocationChanged) {
+      console.log('\n🗺️  ================================');
+      console.log('🗺️   DELIVERY BOY MARKER MOVING');
+      console.log('🗺️  ================================');
+      if (prevLocationRef.current) {
+        console.log('📍 Previous Position:', prevLocationRef.current);
+      } else {
+        console.log('📍 Previous Position: None (First update)');
+      }
+      console.log('📍 New Position:', liveLocation);
+      console.log('✨ Marker animating to new position...');
+      console.log('🗺️  ================================\n');
+      
+      prevLocationRef.current = liveLocation ? { ...liveLocation } : null;
+    }
+
+    console.log('📊 Map Component State:');
+    console.log('├─ Live Location:', liveLocation ? `[${liveLocation.lat}, ${liveLocation.lng}]` : 'None');
+    console.log('├─ Shop Location:', shopLocation ? `[${shopLocation.lat}, ${shopLocation.lng}]` : 'None');
+    console.log('├─ Customer Location:', customerLocation ? `[${customerLocation.lat}, ${customerLocation.lng}]` : 'None');
+    console.log('└─ Delivery Boy Image:', deliveryBoyImage || 'Default');
+  }, [liveLocation, shopLocation, customerLocation, deliveryBoyImage]);
+
   // Default to a central location if nothing is available
   const defaultCenter = [20.5937, 78.9629]; // India center
   
@@ -62,6 +119,8 @@ export default function LiveTrackingMap({ liveLocation, shopLocation, customerLo
       : (customerLocation?.lat && customerLocation?.lng)
         ? [customerLocation.lat, customerLocation.lng]
         : defaultCenter;
+
+  console.log('🎯 Map Center:', initialCenter);
 
   const deliveryIcon = useMemo(() => L.divIcon({
     className: 'custom-leaflet-icon',

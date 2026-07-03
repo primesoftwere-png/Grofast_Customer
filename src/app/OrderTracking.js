@@ -18,6 +18,7 @@ import {
 import Navbar from "@/components/layout/Navbar";
 import { useOrderTracking } from "@/hooks/useOrderTracking";
 import dynamic from "next/dynamic";
+import { useParams } from "next/navigation";
 
 const LiveTrackingMap = dynamic(() => import("@/components/map/LiveTrackingMap"), {
   ssr: false,
@@ -53,7 +54,9 @@ const getStatusStep = (status) => {
   return statusStepMap[status ? status.toUpperCase() : 'PENDING'] || 1;
 };
 
-export default function OrderTracking({ token }) {
+export default function OrderTracking({ token: propToken }) {
+  const params = useParams();
+  const token = propToken || params?.token;
   const [currentStep, setCurrentStep] = useState(1);
   const [orderData, setOrderData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -121,8 +124,56 @@ export default function OrderTracking({ token }) {
     fetchOrderByToken();
   }, [token]);
 
+  // Log initial order data when it loads
+  useEffect(() => {
+    if (orderData) {
+      console.log('\n🎯 ================================');
+      console.log('🎯  ORDER DATA LOADED');
+      console.log('🎯 ================================');
+      console.log('📦 Order ID:', orderData._id);
+      console.log('📦 Order Number:', orderData.orderNumber);
+      console.log('📦 Order Status:', orderData.orderStatus);
+      console.log('🚴 Delivery Boy ID:', orderData.deliveryBoyId?._id || orderData.deliveryBoyId || orderData.deliveryBoy?._id || 'Not assigned');
+      console.log('🎯 ================================');
+      
+      // Log all available locations
+      const customerLoc = getCustomerLocation();
+      const shopLoc = getShopLocation();
+      
+      console.log('\n📍 INITIAL LOCATIONS:');
+      console.log('├─ 🏠 Customer:', customerLoc || 'Not available');
+      console.log('├─ 🏪 Shop:', shopLoc || 'Not available');
+      console.log('└─ 🚴 Delivery Boy: Waiting for live updates...');
+      console.log('');
+    }
+  }, [orderData]);
+
   // Use the tracking hook
-  const { orderStatus: liveStatus, deliveryLocation, deliveryBoy, otp: liveOtp } = useOrderTracking(orderData?._id, orderData?.orderNumber || token);
+  const { orderStatus: liveStatus, deliveryLocation, deliveryBoy, otp: liveOtp } = useOrderTracking(orderData?._id, orderData?.orderNumber || token, orderData);
+
+  // Log delivery location changes with clear indicator of updates
+  useEffect(() => {
+    if (deliveryLocation) {
+      const updateNumber = Date.now();
+      console.log('\n🗺️  ================================');
+      console.log('🗺️   MAP LOCATION UPDATE #' + updateNumber);
+      console.log('🗺️  ================================');
+      console.log('📍 Delivery Boy Location:');
+      console.log('   ├─ Latitude:  ', deliveryLocation.lat);
+      console.log('   └─ Longitude: ', deliveryLocation.lng);
+      if (deliveryLocation.speed) {
+        console.log('🚀 Speed:        ', deliveryLocation.speed, 'm/s');
+      }
+      if (deliveryLocation.heading) {
+        console.log('🧭 Heading:      ', deliveryLocation.heading, '°');
+      }
+      if (deliveryLocation.timestamp) {
+        console.log('⏰ Last Update:  ', new Date(deliveryLocation.timestamp).toLocaleString());
+      }
+      console.log('🔔 Map marker will move to new position!');
+      console.log('🗺️  ================================\n');
+    }
+  }, [deliveryLocation]);
 
   // Update step and refresh details when live status changes
   useEffect(() => {
@@ -177,7 +228,14 @@ export default function OrderTracking({ token }) {
     const addr = orderData.deliveryAddressId || orderData.deliveryAddress;
     const lat = addr?.lat || addr?.lan || addr?.latitude;
     const lng = addr?.lng || addr?.longitude;
-    return lat && lng ? { lat, lng } : null;
+    
+    const location = lat && lng ? { lat, lng } : null;
+    
+    if (location) {
+      console.log('🏠 Customer Location:', location);
+    }
+    
+    return location;
   };
 
   const getShopLocation = () => {
@@ -185,7 +243,14 @@ export default function OrderTracking({ token }) {
     const shop = orderData.shopId || orderData.shop;
     const lat = shop?.lat || shop?.lan || shop?.latitude;
     const lng = shop?.lng || shop?.longitude;
-    return lat && lng ? { lat, lng } : null;
+    
+    const location = lat && lng ? { lat, lng } : null;
+    
+    if (location) {
+      console.log('🏪 Shop Location:', location);
+    }
+    
+    return location;
   };
 
   const rawStatus = liveStatus || orderData?.orderStatus || "PENDING";

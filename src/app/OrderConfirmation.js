@@ -6,8 +6,11 @@ import { Check, MapPin, Clock, Package } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { orderAPI } from "@/services";
 import Navbar from "@/components/layout/Navbar";
+import { useParams } from "next/navigation";
 
-export default function OrderConfirmation({ token }) {
+export default function OrderConfirmation({ token: propToken }) {
+  const params = useParams();
+  const token = propToken || params?.token;
   const { clearCart } = useCart();
 
   const [showCheck, setShowCheck] = useState(false);
