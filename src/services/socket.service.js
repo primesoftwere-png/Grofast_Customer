@@ -62,6 +62,18 @@ class SocketService {
       console.log('========================================');
       console.log('🔌 Socket ID:', this.socket.id);
       console.log('🌐 Socket URL:', SOCKET_URL);
+      console.log('========================================');
+      console.log('📡 LISTENING TO EVENTS:');
+      console.log('   ├─ delivery:live-location (Location updates)');
+      console.log('   ├─ order-status (Status changes)');
+      console.log('   ├─ tracking-status (Tracking updates)');
+      console.log('   ├─ order:status-changed (General status)');
+      console.log('   ├─ order:shop-accepted (Shop accepted)');
+      console.log('   ├─ order:delivery-assigned (Delivery assigned)');
+      console.log('   ├─ order:picked-up (Picked up)');
+      console.log('   ├─ order:out-for-delivery (Out for delivery)');
+      console.log('   ├─ delivery:completed (Delivered)');
+      console.log('   └─ order:delivered (Delivered alt)');
       console.log('========================================\n');
       this.isConnected = true;
     });
@@ -77,13 +89,56 @@ class SocketService {
 
     // Order status updates - Backend broadcasts these events
     this.socket.on('order-status', (data) => {
-      console.log('📦 Order status update received:', data);
+      console.log('\n📦 ================================');
+      console.log('📦  ORDER STATUS UPDATE RECEIVED');
+      console.log('📦 ================================');
+      console.log('📦 Order ID:', data.orderId);
+      console.log('📦 New Status:', data.status || data.orderStatus);
+      console.log('📡 Full Data:', JSON.stringify(data, null, 2));
+      console.log('📦 ================================\n');
       this.emit('order-status-update', data);
     });
 
     this.socket.on('tracking-status', (data) => {
-      console.log('📦 Tracking status update received:', data);
+      console.log('\n📦 ================================');
+      console.log('📦  TRACKING STATUS UPDATE');
+      console.log('📦 ================================');
+      console.log('📦 Status:', data.status || data.orderStatus);
+      console.log('📦 ================================\n');
       this.emit('order-status-update', data);
+    });
+
+    // Order status change event (general)
+    this.socket.on('order:status-changed', (data) => {
+      console.log('\n📦 ================================');
+      console.log('📦  ORDER STATUS CHANGED EVENT');
+      console.log('📦 ================================');
+      console.log('📦 Order ID:', data.orderId);
+      console.log('📦 Old Status:', data.oldStatus);
+      console.log('📦 New Status:', data.newStatus || data.status);
+      console.log('📦 ================================\n');
+      this.emit('order-status-update', { ...data, status: data.newStatus || data.status });
+    });
+
+    // Delivery boy assigned event
+    this.socket.on('order:delivery-assigned', (data) => {
+      console.log('\n🚴 ================================');
+      console.log('🚴  DELIVERY BOY ASSIGNED');
+      console.log('🚴 ================================');
+      console.log('📦 Order ID:', data.orderId);
+      console.log('🚴 Delivery Boy:', data.deliveryBoy || data.deliveryBoyId);
+      console.log('🚴 ================================\n');
+      this.emit('order-status-update', { ...data, status: 'ASSIGNED_TO_DELIVERY' });
+    });
+
+    // Order accepted by shop event
+    this.socket.on('order:shop-accepted', (data) => {
+      console.log('\n🏪 ================================');
+      console.log('🏪  SHOP ACCEPTED ORDER');
+      console.log('🏪 ================================');
+      console.log('📦 Order ID:', data.orderId);
+      console.log('🏪 ================================\n');
+      this.emit('order-status-update', { ...data, status: 'CONFIRMED' });
     });
 
     // Live location updates from delivery boy (every 5 seconds)
@@ -114,14 +169,50 @@ class SocketService {
 
     // Order picked up event
     this.socket.on('order:picked-up', (data) => {
-      console.log('📦 Order picked up event:', data);
+      console.log('\n📦 ================================');
+      console.log('📦  ORDER PICKED UP EVENT');
+      console.log('📦 ================================');
+      console.log('📦 Order ID:', data.orderId);
+      console.log('🚴 Delivery Boy:', data.deliveryBoyId);
+      console.log('⏰ Timestamp:', data.timestamp || new Date().toISOString());
+      console.log('📦 ================================\n');
       this.emit('order-picked-up', data);
+      this.emit('order-status-update', { ...data, status: 'PICKED_UP' });
+    });
+
+    // Out for delivery event
+    this.socket.on('order:out-for-delivery', (data) => {
+      console.log('\n🚚 ================================');
+      console.log('🚚  OUT FOR DELIVERY EVENT');
+      console.log('🚚 ================================');
+      console.log('📦 Order ID:', data.orderId);
+      console.log('🚴 Delivery Boy:', data.deliveryBoyId);
+      console.log('🚚 ================================\n');
+      this.emit('order-status-update', { ...data, status: 'OUT_FOR_DELIVERY' });
     });
 
     // Delivery completed event
     this.socket.on('delivery:completed', (data) => {
-      console.log('✅ Delivery completed event:', data);
+      console.log('\n✅ ================================');
+      console.log('✅  DELIVERY COMPLETED EVENT');
+      console.log('✅ ================================');
+      console.log('📦 Order ID:', data.orderId);
+      console.log('🚴 Delivery Boy:', data.deliveryBoyId);
+      console.log('⏰ Delivered At:', data.deliveredAt || data.timestamp || new Date().toISOString());
+      console.log('✅ ================================\n');
       this.emit('delivery-completed', data);
+      this.emit('order-status-update', { ...data, status: 'DELIVERED' });
+    });
+
+    // Order delivered event (alternative event name)
+    this.socket.on('order:delivered', (data) => {
+      console.log('\n✅ ================================');
+      console.log('✅  ORDER DELIVERED EVENT');
+      console.log('✅ ================================');
+      console.log('📦 Order ID:', data.orderId);
+      console.log('✅ ================================\n');
+      this.emit('delivery-completed', data);
+      this.emit('order-status-update', { ...data, status: 'DELIVERED' });
     });
 
     // Debug: Log all incoming events

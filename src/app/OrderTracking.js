@@ -178,10 +178,23 @@ export default function OrderTracking({ token: propToken }) {
   // Update step and refresh details when live status changes
   useEffect(() => {
     if (liveStatus) {
-      setCurrentStep(getStatusStep(liveStatus));
+      const newStep = getStatusStep(liveStatus);
+      setCurrentStep(newStep);
       
-      // If status changed to ASSIGNED_TO_DELIVERY, PICKED_UP, etc., refresh to get full delivery boy details
-      fetchOrderByToken();
+      console.log('\n🔄 ================================');
+      console.log('🔄  ORDER STATUS AUTO-UPDATE');
+      console.log('🔄 ================================');
+      console.log('📦 Previous Status:', orderData?.orderStatus);
+      console.log('📦 New Live Status:', liveStatus);
+      console.log('📊 Timeline Step:', newStep, '/ 5');
+      console.log('🔄 ================================\n');
+      
+      // If status changed to a major milestone, refresh to get full delivery boy details
+      const majorStatuses = ['ASSIGNED_TO_DELIVERY', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+      if (majorStatuses.includes(liveStatus) && orderData?.orderStatus !== liveStatus) {
+        console.log('🔄 Major status change detected - refreshing order details...');
+        fetchOrderByToken();
+      }
     }
   }, [liveStatus]);
 
@@ -255,6 +268,14 @@ export default function OrderTracking({ token: propToken }) {
 
   const rawStatus = liveStatus || orderData?.orderStatus || "PENDING";
   let currentStatusDisplay = rawStatus;
+  
+  // Log current status for debugging
+  console.log('📊 Current Status Display:', {
+    raw: rawStatus,
+    live: liveStatus,
+    orderData: orderData?.orderStatus,
+    display: currentStatusDisplay
+  });
   
   // Map internal statuses to user-friendly display text
   if (['PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(rawStatus)) {
