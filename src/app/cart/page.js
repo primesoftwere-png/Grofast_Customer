@@ -61,6 +61,8 @@ export default function Cart() {
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("cod");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [processingItemId, setProcessingItemId] = useState(null); // For item quantity changes
 
   const router = useRouter();
 
@@ -201,6 +203,12 @@ export default function Cart() {
       return;
     }
 
+    if (isApplyingCoupon) {
+      return; // Prevent double-click
+    }
+
+    setIsApplyingCoupon(true);
+
     try {
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
       const res = await fetch(`${apiBaseUrl}/customer/coupons/validate`, {
@@ -226,6 +234,8 @@ export default function Cart() {
     } catch (error) {
       console.error("Error applying coupon:", error);
       toast.error("Failed to apply coupon");
+    } finally {
+      setIsApplyingCoupon(false);
     }
   };
 
@@ -233,6 +243,10 @@ export default function Cart() {
     if (items.length === 0) {
       toast.error("Your cart is empty");
       return;
+    }
+
+    if (isProcessingPayment) {
+      return; // Prevent double-click
     }
 
     // Check if user is logged in
@@ -254,16 +268,23 @@ export default function Cart() {
       return;
     }
 
-    // If COD is selected, call order API directly
-    if (selectedPaymentMethod === "cod") {
-      console.log("=== COD Payment Selected ===");
-      console.log("Calling handlePaymentSuccess for COD...");
-      await handlePaymentSuccess(null);
-      return;
-    }
+    setIsProcessingPayment(true);
 
-    // For other payment methods, open Razorpay
-    await initiateRazorpayPayment();
+    try {
+      // If COD is selected, call order API directly
+      if (selectedPaymentMethod === "cod") {
+        console.log("=== COD Payment Selected ===");
+        console.log("Calling handlePaymentSuccess for COD...");
+        await handlePaymentSuccess(null);
+        return;
+      }
+
+      // For other payment methods, open Razorpay
+      await initiateRazorpayPayment();
+    } catch (error) {
+      console.error("Checkout error:", error);
+      setIsProcessingPayment(false);
+    }
   };
 
   const initiateRazorpayPayment = async () => {
@@ -831,11 +852,21 @@ export default function Cart() {
                       {/* Quantity */}
                       <div className="flex items-center justify-between bg-primary/10 rounded-lg p-1 min-w-0 w-[90px] sm:w-[100px] shrink-0">
                         <button
-                          onClick={() => decreaseItem(productId)}
-                          className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center bg-white rounded-md shadow-sm hover:bg-primary hover:text-white transition-colors text-primary"
+                          onClick={() => {
+                            if (processingItemId) return;
+                            setProcessingItemId(productId);
+                            decreaseItem(productId);
+                            setTimeout(() => setProcessingItemId(null), 300);
+                          }}
+                          disabled={processingItemId === productId}
+                          className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center bg-white rounded-md shadow-sm hover:bg-primary hover:text-white transition-colors text-primary disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Decrease quantity"
                         >
-                          <Minus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                          {processingItemId === productId ? (
+                            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <Minus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                          )}
                         </button>
 
                         <span className="font-semibold text-primary text-sm min-w-[16px] text-center">
@@ -843,12 +874,21 @@ export default function Cart() {
                         </span>
 
                         <button
-                          onClick={() => addItem(product)}
-                          disabled={isStockLimitReached}
-                          className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center bg-white rounded-md shadow-sm transition-colors text-primary ${isStockLimitReached ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary hover:text-white'}`}
+                          onClick={() => {
+                            if (processingItemId || isStockLimitReached) return;
+                            setProcessingItemId(productId);
+                            addItem(product);
+                            setTimeout(() => setProcessingItemId(null), 300);
+                          }}
+                          disabled={isStockLimitReached || processingItemId === productId}
+                          className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center bg-white rounded-md shadow-sm transition-colors text-primary ${(isStockLimitReached || processingItemId === productId) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary hover:text-white'}`}
                           aria-label="Increase quantity"
                         >
-                          <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                          {processingItemId === productId ? (
+                            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                          )}
                         </button>
                       </div>
 
@@ -876,7 +916,8 @@ export default function Cart() {
                 {isUserLoggedIn && (
                   <button
                     onClick={() => setIsAddressModalOpen(true)}
-                    className="text-primary text-xs sm:text-sm font-semibold hover:bg-primary/10 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg transition-all flex items-center gap-1 shrink-0"
+                    disabled={isSavingAddress}
+                    className="text-primary text-xs sm:text-sm font-semibold hover:bg-primary/10 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg transition-all flex items-center gap-1 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="Add new address"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -956,14 +997,22 @@ export default function Cart() {
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value)}
                   placeholder="Enter coupon code"
-                  className="border border-border px-3 py-2 rounded flex-1 bg-background min-w-0 text-sm"
+                  disabled={isApplyingCoupon}
+                  className="border border-border px-3 py-2 rounded flex-1 bg-background min-w-0 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 />
 
                 <button
                   onClick={handleApplyCoupon}
-                  className="bg-primary text-primary-foreground px-4 rounded hover:opacity-90 transition"
+                  disabled={isApplyingCoupon || !couponCode}
+                  className="bg-primary text-primary-foreground px-4 rounded hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-w-[80px] justify-center"
                 >
-                  Apply
+                  {isApplyingCoupon ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                    </>
+                  ) : (
+                    'Apply'
+                  )}
                 </button>
               </div>
             </div>

@@ -119,7 +119,7 @@ export default function OrderTracking({ token: propToken }) {
     }
   };
 
-  // Initial fetch
+  // Initial fetch only
   useEffect(() => {
     fetchOrderByToken();
   }, [token]);
@@ -175,26 +175,18 @@ export default function OrderTracking({ token: propToken }) {
     }
   }, [deliveryLocation]);
 
-  // Update step and refresh details when live status changes
+  // Update step when live status changes via socket - NO re-fetch, socket is the source of truth
   useEffect(() => {
     if (liveStatus) {
       const newStep = getStatusStep(liveStatus);
       setCurrentStep(newStep);
       
       console.log('\n🔄 ================================');
-      console.log('🔄  ORDER STATUS AUTO-UPDATE');
+      console.log('🔄  ORDER STATUS UPDATED VIA SOCKET');
       console.log('🔄 ================================');
-      console.log('📦 Previous Status:', orderData?.orderStatus);
       console.log('📦 New Live Status:', liveStatus);
       console.log('📊 Timeline Step:', newStep, '/ 5');
       console.log('🔄 ================================\n');
-      
-      // If status changed to a major milestone, refresh to get full delivery boy details
-      const majorStatuses = ['ASSIGNED_TO_DELIVERY', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED'];
-      if (majorStatuses.includes(liveStatus) && orderData?.orderStatus !== liveStatus) {
-        console.log('🔄 Major status change detected - refreshing order details...');
-        fetchOrderByToken();
-      }
     }
   }, [liveStatus]);
 
@@ -404,6 +396,31 @@ export default function OrderTracking({ token: propToken }) {
         <Navbar />
       </div>
 
+      {/* Loading State - Show while fetching order data */}
+      {isLoading && (
+        <main className="container mx-auto px-4 py-6 print:py-0 print:px-0 max-w-4xl">
+          <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+            <div className="relative">
+              <div className="w-20 h-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-transparent border-t-primary/50 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1s' }}></div>
+              </div>
+            </div>
+            <div className="text-center space-y-2">
+              <h2 className="text-xl font-semibold text-foreground">Loading Order Details...</h2>
+              <p className="text-sm text-muted-foreground">Please wait while we fetch your order information</p>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+          </div>
+        </main>
+      )}
+
+      {/* Main Content - Show after loading */}
+      {!isLoading && (
       <main id="printable-area" className="container mx-auto px-4 py-6 print:py-0 print:px-0 max-w-4xl">
         
         {/* Back */}
@@ -698,6 +715,7 @@ export default function OrderTracking({ token: propToken }) {
           </Link>
         )}
       </main>
+      )}
     </div>
   );
 }

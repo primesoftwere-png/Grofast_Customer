@@ -95,6 +95,18 @@ export default function OrderConfirmation({ token: propToken }) {
   const fullAddress = deliveryAddress + (city ? `, ${city}` : '') + (state ? `, ${state}` : '') + (pincode ? ` - ${pincode}` : '');
 
   // ================= SUCCESS STATE =================
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container mx-auto px-4 py-32 flex flex-col items-center justify-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-muted-foreground font-medium">Loading your order details...</p>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

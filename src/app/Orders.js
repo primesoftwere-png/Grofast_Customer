@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -319,6 +319,8 @@ function OrderDetail({ token }) {
 
 /* ================= MAIN PAGE ================= */
 
+let lastGlobalFetchTime = 0;
+
 export default function OrdersPage({ token }) {
   if (token) {
     return <OrderDetail token={token} />;
@@ -329,7 +331,14 @@ export default function OrdersPage({ token }) {
   const [historyOrders, setHistoryOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
+    const now = Date.now();
+    if (now - lastGlobalFetchTime < 2000) {
+      console.log('⏳ Throttled fetchOrders to prevent loop');
+      return;
+    }
+    lastGlobalFetchTime = now;
+
     try {
       setIsLoading(true);
       const accessToken = localStorage.getItem('token');
@@ -360,7 +369,7 @@ export default function OrdersPage({ token }) {
 
       console.log('📤 Fetching categorized orders for user:', userId);
       
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://http://localhost:8001/api';
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
       
       const response = await fetch(`${apiBaseUrl}/order/categorized/${userId}`, {
         method: 'GET',
@@ -382,12 +391,12 @@ export default function OrdersPage({ token }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Fetch categorized orders
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
   // Socket Connection for Real-time tracking
   useEffect(() => {
@@ -405,17 +414,24 @@ export default function OrdersPage({ token }) {
           if (socket) {
             socket.emit('join', userId);
             
+            let debounceTimer;
             // Listen for order status updates
             const handleOrderStatusUpdate = (data) => {
               console.log('📦 Order Status Update received via Socket:', data);
-              toast.success(`Order ${data.orderId || ''} status updated to ${data.status}`);
-              fetchOrders();
+              
+              // Debounce toast and fetchOrders to prevent infinite loops if backend is spamming
+              clearTimeout(debounceTimer);
+              debounceTimer = setTimeout(() => {
+                toast.success(`Order ${data.orderId || ''} status updated to ${data.status}`);
+                fetchOrders();
+              }, 2000);
             };
             
             socketService.on('order-status-update', handleOrderStatusUpdate);
             
             return () => {
               socketService.off('order-status-update', handleOrderStatusUpdate);
+              clearTimeout(debounceTimer);
             };
           }
         }
@@ -423,7 +439,7 @@ export default function OrdersPage({ token }) {
         console.error('Socket initialization error:', error);
       }
     }
-    }, []);
+    }, [fetchOrders]);
 
   return (
     <div className="min-h-screen bg-background">
