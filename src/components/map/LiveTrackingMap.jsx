@@ -38,36 +38,37 @@ function MapUpdater({ liveLocation, shopLocation, customerLocation }) {
   useEffect(() => {
     const points = [];
     
-    console.log('\n🗺️  MAP BOUNDS UPDATE:');
-    
     if (liveLocation?.lat && liveLocation?.lng) {
       points.push([liveLocation.lat, liveLocation.lng]);
-      console.log('├─ 🚴 Delivery Boy: [', liveLocation.lat, ',', liveLocation.lng, ']');
-    } else {
-      console.log('├─ 🚴 Delivery Boy: Not available');
     }
-    
     if (shopLocation?.lat && shopLocation?.lng) {
       points.push([shopLocation.lat, shopLocation.lng]);
-      console.log('├─ 🏪 Shop:        [', shopLocation.lat, ',', shopLocation.lng, ']');
-    } else {
-      console.log('├─ 🏪 Shop:        Not available');
     }
-    
     if (customerLocation?.lat && customerLocation?.lng) {
       points.push([customerLocation.lat, customerLocation.lng]);
-      console.log('├─ 🏠 Customer:     [', customerLocation.lat, ',', customerLocation.lng, ']');
-    } else {
-      console.log('├─ 🏠 Customer:     Not available');
     }
 
-    if (points.length > 0) {
-      const bounds = L.latLngBounds(points);
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
-      console.log('└─ ✅ Map bounds updated with', points.length, 'markers');
-    } else {
-      console.log('└─ ⚠️  No valid coordinates to update map bounds');
+    if (points.length === 0) return;
+
+    if (points.length === 1) {
+      // Single point – just centre on it
+      map.setView(points[0], 15);
+      return;
     }
+
+    // Check if all points are essentially the same location (within ~10m)
+    const allSame = points.every(p =>
+      Math.abs(p[0] - points[0][0]) < 0.0001 &&
+      Math.abs(p[1] - points[0][1]) < 0.0001
+    );
+
+    if (allSame) {
+      map.setView(points[0], 15);
+      return;
+    }
+
+    const bounds = L.latLngBounds(points);
+    map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
   }, [map, liveLocation, shopLocation, customerLocation]);
 
   return null;

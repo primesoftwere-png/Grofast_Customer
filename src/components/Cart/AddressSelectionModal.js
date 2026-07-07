@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X, Plus, MapPin, Loader2 } from "lucide-react";
 import { addressAPI } from "@/services/address.api";
 import AddressModal from "@/components/Cart/AddressModal";
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 
 export default function AddressSelectionModal({ isOpen, onClose, userId, currentAddressId, onSelect }) {
   const [addresses, setAddresses] = useState([]);
@@ -102,8 +103,8 @@ export default function AddressSelectionModal({ isOpen, onClose, userId, current
         {/* Content */}
         <div className="p-4 overflow-y-auto flex-1">
           {isLoading ? (
-            <div className="flex items-center justify-center py-10">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <div className="flex items-center justify-center py-10 relative overflow-hidden rounded-2xl h-64">
+              <EcommerceLoader fullScreen={false} message="Loading addresses..." />
             </div>
           ) : addresses.length > 0 ? (
             <div className="space-y-3">

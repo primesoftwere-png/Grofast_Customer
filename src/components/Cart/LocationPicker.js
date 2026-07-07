@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { Loader2 } from "lucide-react";
 import L from 'leaflet';
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 
 // Fix leaflet default icons for Next.js
 if (typeof window !== 'undefined') {
@@ -46,8 +47,8 @@ export default function LocationPicker({ position, setPosition }) {
 
   if (!mounted) {
     return (
-      <div className="w-full h-[200px] bg-muted rounded-xl flex items-center justify-center border border-border">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      <div className="w-full h-[200px] bg-muted rounded-xl flex items-center justify-center border border-border relative overflow-hidden">
+        <EcommerceLoader fullScreen={false} message={null} />
       </div>
     );
   }

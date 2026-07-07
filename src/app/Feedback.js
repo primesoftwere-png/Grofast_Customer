@@ -5,13 +5,14 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Star,
   Camera,
-  Loader2,
   CheckCircle,
   ThumbsUp,
   Package,
   ShoppingBag,
+  Loader2,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 import { orderAPI } from "@/services/order.api";
 import { feedbackAPI } from "@/services/feedback.api";
 import { API_CONFIG } from "@/config/api.config";
@@ -242,9 +243,7 @@ function FeedbackContent() {
         </div>
 
         {isFetchingOrder ? (
-          <div className="flex justify-center items-center py-20">
-            <Loader2 className="w-10 h-10 animate-spin text-primary" />
-          </div>
+          <EcommerceLoader fullScreen={false} />
         ) : (
           <div className="space-y-6">
             
@@ -432,11 +431,7 @@ function FeedbackContent() {
 
 export default function Feedback() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex justify-center items-center">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
-    }>
+    <Suspense fallback={<EcommerceLoader />}>
       <FeedbackContent />
     </Suspense>
   );

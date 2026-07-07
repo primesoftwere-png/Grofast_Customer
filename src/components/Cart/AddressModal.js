@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import { X, MapPin, Navigation, Loader2 } from "lucide-react";
 import dynamic from 'next/dynamic';
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 
 const LocationPicker = dynamic(() => import('./LocationPicker'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[200px] bg-muted rounded-xl flex items-center justify-center border border-border">
-      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+    <div className="w-full h-[200px] bg-muted rounded-xl flex items-center justify-center border border-border relative overflow-hidden">
+      <EcommerceLoader fullScreen={false} message={null} />
     </div>
   )
 });

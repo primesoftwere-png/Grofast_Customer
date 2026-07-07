@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import ProductCard from "@/components/Product/ProductCard";
 import Navbar from "@/components/layout/Navbar";
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 import Footer from "@/components/layout/Footer";
 
 export default function CategoryPage() {
@@ -106,7 +107,7 @@ export default function CategoryPage() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-20 flex justify-center items-center">
-          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          <EcommerceLoader fullScreen={false} />
         </div>
       </div>
     );

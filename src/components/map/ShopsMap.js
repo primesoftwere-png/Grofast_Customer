@@ -6,6 +6,7 @@ import "leaflet/dist/leaflet.css";
 import { Loader2, MapPin, Navigation } from "lucide-react";
 import L from 'leaflet';
 import Link from "next/link";
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 
 // Fix leaflet default icons for Next.js
 if (typeof window !== 'undefined') {
@@ -72,9 +73,8 @@ export default function ShopsMap({ shops, userLocation }) {
 
   if (!mounted) {
     return (
-      <div className="w-full h-full bg-muted rounded-2xl flex flex-col items-center justify-center border border-border">
-        <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
-        <p className="text-sm text-muted-foreground">Loading Map...</p>
+      <div className="w-full h-full bg-muted rounded-2xl flex flex-col items-center justify-center border border-border overflow-hidden relative">
+        <EcommerceLoader fullScreen={false} message="Loading Map..." />
       </div>
     );
   }

@@ -447,12 +447,12 @@ export default function OrderTracking({ token: propToken }) {
         </div>
 
         {/* Map and Delivery Info */}
-        {(displayRider || currentStep >= 3) && (
+        {(currentStatusDisplay === 'OUT_FOR_DELIVERY') && (
           <>
-            <div className="relative rounded-3xl overflow-hidden bg-muted h-64 md:h-80 mb-6 shadow z-0 print:hidden">
+            <div className="relative rounded-3xl overflow-hidden bg-muted h-64 md:h-80 mb-4 shadow z-0 print:hidden">
               
               <LiveTrackingMap 
-                liveLocation={deliveryLocation || getShopLocation()}
+                liveLocation={deliveryLocation || null}
                 shopLocation={getShopLocation()}
                 customerLocation={getCustomerLocation()}
                 deliveryBoyImage={riderImage}
@@ -502,6 +502,50 @@ export default function OrderTracking({ token: propToken }) {
                     </Link>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Live Location Debug Panel – for mobile testing */}
+            <div className="rounded-xl mb-4 border border-primary/20 bg-primary/5 print:hidden overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2 bg-primary/10 border-b border-primary/20">
+                <span className="text-xs font-bold text-primary uppercase tracking-wider">📍 Live Location Debug</span>
+                <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                  Updates every 5s
+                </span>
+              </div>
+              <div className="px-4 py-3 space-y-1.5 font-mono text-xs">
+                <div className="flex gap-2 items-start">
+                  <span className="text-orange-500 font-bold shrink-0">🚴 Rider:</span>
+                  <span className="text-foreground break-all">
+                    {deliveryLocation
+                      ? `${deliveryLocation.lat.toFixed(7)}, ${deliveryLocation.lng.toFixed(7)}`
+                      : <span className="text-muted-foreground italic">Waiting for rider location…</span>}
+                  </span>
+                </div>
+                <div className="flex gap-2 items-start">
+                  <span className="text-green-600 font-bold shrink-0">🏪 Shop:</span>
+                  <span className="text-foreground break-all">
+                    {getShopLocation()
+                      ? `${getShopLocation().lat.toFixed(7)}, ${getShopLocation().lng.toFixed(7)}`
+                      : <span className="text-muted-foreground italic">Not available</span>}
+                  </span>
+                </div>
+                <div className="flex gap-2 items-start">
+                  <span className="text-blue-500 font-bold shrink-0">🏠 You:</span>
+                  <span className="text-foreground break-all">
+                    {getCustomerLocation()
+                      ? `${getCustomerLocation().lat.toFixed(7)}, ${getCustomerLocation().lng.toFixed(7)}`
+                      : <span className="text-muted-foreground italic">Not available</span>}
+                  </span>
+                </div>
+                {deliveryLocation?.timestamp && (
+                  <div className="flex gap-2 items-center pt-1 border-t border-primary/10">
+                    <span className="text-muted-foreground shrink-0">⏰ Last update:</span>
+                    <span className="text-muted-foreground">{new Date(deliveryLocation.timestamp).toLocaleTimeString()}</span>
+                    {deliveryLocation.source === 'poll' && <span className="text-xs text-blue-400">(poll)</span>}
+                  </div>
+                )}
               </div>
             </div>
 

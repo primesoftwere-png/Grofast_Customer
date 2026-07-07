@@ -8,6 +8,7 @@ import { productAPI, wishlistAPI } from "@/services";
 import { useCart } from "@/context/CartContext";
 import Navbar from "@/components/layout/Navbar";
 import ProductCard from "@/components/Product/ProductCard";
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 import toast from "react-hot-toast";
 
 export default function ProductDetails() {
@@ -205,10 +206,7 @@ export default function ProductDetails() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-12 flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading product details...</p>
-          </div>
+          <EcommerceLoader fullScreen={false} message="Loading product details..." />
         </div>
       </div>
     );

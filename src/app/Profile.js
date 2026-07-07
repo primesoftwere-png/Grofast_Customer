@@ -17,11 +17,13 @@ import {
   Plus,
   Lock,
   Pencil,
-  Loader2,
+  Settings,
   X,
   Check,
+  Loader2,
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 import { authAPI, userAPI } from "@/lib/api";
 
 export default function Profile() {
@@ -120,7 +122,7 @@ export default function Profile() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <EcommerceLoader fullScreen={false} message="Loading your profile..." />
         </div>
       </div>
     );

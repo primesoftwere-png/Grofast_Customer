@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { productAPI } from "@/services";
 import ProductCard from "@/components/Product/ProductCard";
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 
 export default function ProductsGrid({
   selectedCategory,
@@ -70,8 +71,8 @@ export default function ProductsGrid({
   if (isLoading) {
     return (
       <section className="py-6">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="flex items-center justify-center h-64 relative overflow-hidden rounded-2xl">
+          <EcommerceLoader fullScreen={false} message="Loading products..." />
         </div>
       </section>
     );

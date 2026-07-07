@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState([]);
@@ -60,9 +61,7 @@ export default function CategoriesPage() {
         <h1 className="text-3xl font-bold mb-8">All Categories</h1>
 
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
+          <EcommerceLoader fullScreen={false} />
         ) : (
           <div className="grid gap-6">
             {categories.map((category, index) => {

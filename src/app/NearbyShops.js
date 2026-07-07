@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -22,8 +23,8 @@ import toast from "react-hot-toast";
 const ShopsMap = dynamic(() => import("@/components/map/ShopsMap"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full bg-muted rounded-2xl flex items-center justify-center border border-border">
-      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    <div className="w-full h-full bg-muted rounded-2xl flex items-center justify-center border border-border overflow-hidden relative">
+      <EcommerceLoader fullScreen={false} message={null} />
     </div>
   ),
 });
@@ -178,10 +179,7 @@ export default function NearbyShops() {
         {/* Shops List */}
         <div className="space-y-4">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
-              <p className="text-muted-foreground font-medium">Finding nearby shops...</p>
-            </div>
+            <EcommerceLoader fullScreen={false} message="Finding nearby shops..." />
           ) : (
             <>
               {filteredShops.map((shop, index) => (

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { productAPI } from "@/services";
 import ProductCard from "@/components/Product/ProductCard";
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 
 export default function MostSellProducts() {
   const [products, setProducts] = useState([]);
@@ -33,8 +34,8 @@ export default function MostSellProducts() {
   if (isLoading) {
     return (
       <section className="py-6">
-        <div className="flex items-center justify-center h-48">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="flex items-center justify-center h-48 relative overflow-hidden rounded-2xl">
+          <EcommerceLoader fullScreen={false} message="Loading top products..." />
         </div>
       </section>
     );

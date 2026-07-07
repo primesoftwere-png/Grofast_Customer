@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import socketService from '@/services/socket.service';
 
 /**
@@ -66,18 +66,35 @@ export function useOrderTracking(orderId, orderNumber, initialOrderData = null) 
     // Seed initial delivery location if available in API data
     const lat =
       initialOrderData.deliveryLocation?.lat ||
+      initialOrderData.deliveryLocation?.latitude ||
       initialOrderData.deliveryBoy?.lat ||
+      initialOrderData.deliveryBoy?.latitude ||
+      initialOrderData.deliveryBoyId?.lat ||
+      initialOrderData.deliveryBoyId?.latitude ||
       initialOrderData.location?.lat ||
-      initialOrderData.lat;
+      initialOrderData.location?.latitude ||
+      initialOrderData.lat ||
+      initialOrderData.latitude;
+      
     const lng =
       initialOrderData.deliveryLocation?.lng ||
+      initialOrderData.deliveryLocation?.longitude ||
       initialOrderData.deliveryBoy?.lng ||
+      initialOrderData.deliveryBoy?.longitude ||
+      initialOrderData.deliveryBoyId?.lng ||
+      initialOrderData.deliveryBoyId?.longitude ||
       initialOrderData.location?.lng ||
-      initialOrderData.lng;
+      initialOrderData.location?.longitude ||
+      initialOrderData.lng ||
+      initialOrderData.longitude;
 
     if (lat && lng) {
-      setDeliveryLocation({ lat, lng });
-      console.log('📍 Initial delivery location:', { lat, lng });
+      const parsedLat = parseFloat(lat);
+      const parsedLng = parseFloat(lng);
+      if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+        setDeliveryLocation({ lat: parsedLat, lng: parsedLng });
+        console.log('📍 Initial delivery location:', { lat: parsedLat, lng: parsedLng });
+      }
     }
 
     console.log('🌱 ================================\n');
@@ -141,8 +158,8 @@ export function useOrderTracking(orderId, orderNumber, initialOrderData = null) 
         return;
       }
 
-      const lat = data.lat || data.latitude || data.location?.lat || data.location?.latitude;
-      const lng = data.lng || data.longitude || data.location?.lng || data.location?.longitude;
+      const lat = data.lat || data.latitude || data.location?.lat || data.location?.latitude || data.deliveryBoy?.lat || data.deliveryBoy?.latitude || data.deliveryBoyId?.lat || data.deliveryBoyId?.latitude;
+      const lng = data.lng || data.longitude || data.location?.lng || data.location?.longitude || data.deliveryBoy?.lng || data.deliveryBoy?.longitude || data.deliveryBoyId?.lng || data.deliveryBoyId?.longitude;
 
       console.log('📍 [SOCKET] Live location update → lat:', lat, 'lng:', lng);
 
@@ -151,15 +168,19 @@ export function useOrderTracking(orderId, orderNumber, initialOrderData = null) 
       if (data.otp || data.deliveryOtp || data.deliveryOTP) setOtp(data.otp || data.deliveryOtp || data.deliveryOTP);
 
       if (lat && lng) {
-        setDeliveryLocation({
-          lat,
-          lng,
-          speed: data.speed || data.location?.speed || null,
-          heading: data.heading || data.location?.heading || null,
-          accuracy: data.accuracy || data.location?.accuracy || null,
-          timestamp: data.timestamp || new Date().toISOString(),
-        });
-        console.log('✅ [SOCKET] Delivery location updated on map');
+        const parsedLat = parseFloat(lat);
+        const parsedLng = parseFloat(lng);
+        if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+          setDeliveryLocation({
+            lat: parsedLat,
+            lng: parsedLng,
+            speed: data.speed || data.location?.speed || null,
+            heading: data.heading || data.location?.heading || null,
+            accuracy: data.accuracy || data.location?.accuracy || null,
+            timestamp: data.timestamp || new Date().toISOString(),
+          });
+          console.log('✅ [SOCKET] Delivery location updated on map');
+        }
       }
     };
 
@@ -245,6 +266,20 @@ export function useOrderTracking(orderId, orderNumber, initialOrderData = null) 
       socketService.off('delivery-completed', handleDeliveryCompleted);
     };
   }, [orderId, orderNumber]); // Only re-runs if orderId or orderNumber changes
+
+  // ── STEP 3: 5-second polling fallback for live delivery location ──
+  // This ensures the map updates every 5s even if socket is slow or silent.
+  useEffect(() => {
+    if (!orderId) return;
+
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+    // Disabled API polling for location as requested
+    // const pollLocation = async () => { ... }
+    // pollLocation();
+    // const intervalId = setInterval(pollLocation, 5000);
+    // return () => clearInterval(intervalId);
+  }, [orderId]);
 
   return { orderStatus, deliveryLocation, deliveryBoy, otp, isConnected };
 }
