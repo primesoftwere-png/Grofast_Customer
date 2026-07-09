@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { productAPI } from "@/services";
 import ProductCard from "@/components/Product/ProductCard";
-import EcommerceLoader from "@/components/common/EcommerceLoader";
+import ProductCardSkeleton from "@/components/common/ProductCardSkeleton";
 
 export default function MostSellProducts() {
   const [products, setProducts] = useState([]);
@@ -34,8 +34,16 @@ export default function MostSellProducts() {
   if (isLoading) {
     return (
       <section className="py-6">
-        <div className="flex items-center justify-center h-48 relative overflow-hidden rounded-2xl">
-          <EcommerceLoader fullScreen={false} message="Loading top products..." />
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-semibold">Most sell Product</h2>
+            <p className="text-sm text-muted-foreground">Top selling items</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {[...Array(10)].map((_, index) => (
+            <ProductCardSkeleton key={index} />
+          ))}
         </div>
       </section>
     );

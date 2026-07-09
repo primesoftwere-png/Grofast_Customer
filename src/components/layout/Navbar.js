@@ -252,7 +252,7 @@ export default function Navbar() {
             {isLoggedIn ? (
               <div className="relative">
                 <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  onClick={() => router.push('/profile')}
                   className="flex items-center gap-1.5 sm:gap-2.5 bg-white/10 hover:bg-white/25 text-white px-1.5 sm:px-3 py-1.5 rounded-full transition-all duration-300 border border-white/20 shadow-sm hover:scale-105 active:scale-95 transform"
                 >
                   <div className="w-6 h-6 sm:w-7 sm:h-7 bg-white text-primary rounded-full flex items-center justify-center font-bold text-xs sm:text-sm">
@@ -260,48 +260,6 @@ export default function Navbar() {
                   </div>
                   <span className="hidden sm:inline font-semibold text-sm max-w-[100px] truncate">{user?.name?.split(' ')[0] || 'User'}</span>
                 </button>
-
-                {/* User Dropdown */}
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-2xl py-2 z-50 border border-gray-100 transform origin-top-right transition-all duration-200 animate-in fade-in zoom-in-95">
-                    <div className="px-4 py-3 border-b border-gray-50 mb-2">
-                       <p className="text-sm font-semibold text-gray-800 truncate">{user?.name || 'User'}</p>
-                       <p className="text-xs text-gray-500 truncate">{user?.email || ''}</p>
-                    </div>
-                    <Link
-                      href="/profile"
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium hover:translate-x-1"
-                    >
-                      <User className="w-4 h-4 text-primary" />
-                      Profile
-                    </Link>
-                    <Link
-                      href="/orders"
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium hover:translate-x-1"
-                    >
-                      <Package className="w-4 h-4 text-primary" />
-                      Orders
-                    </Link>
-                    <Link
-                      href="/profile"
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium hover:translate-x-1"
-                    >
-                      <Settings className="w-4 h-4 text-primary" />
-                      Settings
-                    </Link>
-                    <div className="h-px bg-gray-100 my-2" />
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 text-red-600 transition-colors text-sm font-medium hover:translate-x-1"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Logout
-                    </button>
-                  </div>
-                )}
               </div>
             ) : (
               <Link href="/auth">
@@ -519,13 +477,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Click outside to close user menu */}
-      {showUserMenu && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowUserMenu(false)}
-        />
-      )}
+
 
       {/* Global Address Selection Modal */}
       <AddressSelectionModal

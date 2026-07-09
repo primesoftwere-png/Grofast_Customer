@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { productAPI } from "@/services";
 import ProductCard from "@/components/Product/ProductCard";
-import EcommerceLoader from "@/components/common/EcommerceLoader";
+import ProductCardSkeleton from "@/components/common/ProductCardSkeleton";
 
 export default function ProductsGrid({
   selectedCategory,
@@ -70,9 +70,19 @@ export default function ProductsGrid({
 
   if (isLoading) {
     return (
-      <section className="py-6">
-        <div className="flex items-center justify-center h-64 relative overflow-hidden rounded-2xl">
-          <EcommerceLoader fullScreen={false} message="Loading products..." />
+      <section id="products" className="py-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-semibold">
+              {selectedCategory ? selectedCategory : "All Products"}
+            </h2>
+            <p className="text-sm text-muted-foreground">Loading items...</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {[...Array(10)].map((_, index) => (
+            <ProductCardSkeleton key={index} />
+          ))}
         </div>
       </section>
     );

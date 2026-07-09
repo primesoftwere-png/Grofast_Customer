@@ -274,12 +274,68 @@ export function useOrderTracking(orderId, orderNumber, initialOrderData = null) 
 
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-    // Disabled API polling for location as requested
-    // const pollLocation = async () => { ... }
-    // pollLocation();
-    // const intervalId = setInterval(pollLocation, 5000);
-    // return () => clearInterval(intervalId);
-  }, [orderId]);
+    const pollLocation = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        // Fetch fresh order details
+        const endpoint = orderNumber ? `/order/recent/${orderNumber}` : `/order/recent/${orderId}`;
+        const response = await fetch(`${apiBaseUrl}${endpoint}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await response.json();
+        const orderInfo = data.data || data.order;
+        if (!orderInfo) return;
+
+        // Extract location precisely as done in seeding
+        const lat = orderInfo.deliveryLocation?.lat || orderInfo.deliveryLocation?.latitude ||
+                   orderInfo.deliveryBoy?.lat || orderInfo.deliveryBoy?.latitude ||
+                   orderInfo.deliveryBoyId?.lat || orderInfo.deliveryBoyId?.latitude ||
+                   orderInfo.location?.lat || orderInfo.location?.latitude ||
+                   orderInfo.lat || orderInfo.latitude;
+                   
+        const lng = orderInfo.deliveryLocation?.lng || orderInfo.deliveryLocation?.longitude ||
+                   orderInfo.deliveryBoy?.lng || orderInfo.deliveryBoy?.longitude ||
+                   orderInfo.deliveryBoyId?.lng || orderInfo.deliveryBoyId?.longitude ||
+                   orderInfo.location?.lng || orderInfo.location?.longitude ||
+                   orderInfo.lng || orderInfo.longitude;
+
+        if (lat && lng) {
+          const parsedLat = parseFloat(lat);
+          const parsedLng = parseFloat(lng);
+          if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+            setDeliveryLocation(prev => {
+              // Only update if location changed to prevent unnecessary re-renders
+              if (prev && prev.lat === parsedLat && prev.lng === parsedLng) return prev;
+              
+              console.log('📍 [POLL] Delivery location updated:', { lat: parsedLat, lng: parsedLng });
+              return { 
+                lat: parsedLat, 
+                lng: parsedLng,
+                timestamp: new Date().toISOString(),
+                source: 'poll'
+              };
+            });
+          }
+        }
+        
+        // Also update status if changed
+        if (orderInfo.orderStatus) {
+            setOrderStatus(orderInfo.orderStatus);
+        }
+      } catch (err) {
+        console.error('Polling location failed:', err);
+      }
+    };
+
+    pollLocation();
+    const intervalId = setInterval(pollLocation, 5000);
+    return () => clearInterval(intervalId);
+  }, [orderId, orderNumber]);
 
   return { orderStatus, deliveryLocation, deliveryBoy, otp, isConnected };
 }

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { productAPI } from "@/services";
 import ProductCard from "@/components/Product/ProductCard";
-import EcommerceLoader from "@/components/common/EcommerceLoader";
+import ProductCardSkeleton from "@/components/common/ProductCardSkeleton";
 
 export default function BestSellers() {
   const scrollRef = useRef(null);
@@ -48,8 +48,18 @@ export default function BestSellers() {
   if (isLoading) {
     return (
       <section className="py-6">
-        <div className="flex items-center justify-center h-48 relative overflow-hidden rounded-2xl">
-          <EcommerceLoader fullScreen={false} message="Loading best sellers..." />
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-semibold">Mostly Sold</h2>
+            <p className="text-sm text-muted-foreground">Our customers' favorites</p>
+          </div>
+        </div>
+        <div className="flex gap-4 overflow-hidden pb-2 -mx-4 px-4">
+          {[...Array(6)].map((_, index) => (
+            <div key={index} className="w-44 sm:w-48 shrink-0">
+              <ProductCardSkeleton />
+            </div>
+          ))}
         </div>
       </section>
     );
