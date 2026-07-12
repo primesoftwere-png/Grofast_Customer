@@ -22,19 +22,16 @@ class SocketService {
    * @param {string} token - JWT authentication token
    */
   connect(token) {
-    if (this.socket?.connected) {
-      console.log('Socket already connected');
+    if (this.socket) {
+      console.log('Socket already initialized');
       return this.socket;
     }
 
-    if (!token) {
-      console.error('No token provided for socket connection');
-      return null;
-    }
+    const authToken = token || '';
 
     this.socket = io(SOCKET_URL, {
       auth: {
-        token: token
+        token: authToken
       },
       transports: ['websocket', 'polling'],
       reconnection: true,

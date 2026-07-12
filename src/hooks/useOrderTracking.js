@@ -102,11 +102,7 @@ export function useOrderTracking(orderId, orderNumber, initialOrderData = null) 
 
   // ── STEP 2: Connect to socket and listen for live updates ──
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('⚠️ No auth token - cannot connect to socket');
-      return;
-    }
+    const token = localStorage.getItem('token') || '';
     if (!orderId && !orderNumber) {
       console.log('⚠️ No orderId/orderNumber yet - waiting...');
       return;
@@ -276,16 +272,21 @@ export function useOrderTracking(orderId, orderNumber, initialOrderData = null) 
 
     const pollLocation = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
+        const token = localStorage.getItem('token') || '';
         
-        // Fetch fresh order details
+        // Also explicitly request via socket every 5s if connected
+        if (socketService.isSocketConnected() && orderId) {
+          const socket = socketService.getSocket();
+          socket.emit('customer:request-location', { orderId, deliveryBoyId: deliveryBoyIdRef.current });
+          socket.emit('get-live-location', { orderId, deliveryBoyId: deliveryBoyIdRef.current });
+        }
+        
+        // Fetch fresh order details as fallback
         const endpoint = orderNumber ? `/order/recent/${orderNumber}` : `/order/recent/${orderId}`;
-        const response = await fetch(`${apiBaseUrl}${endpoint}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
+        const response = await fetch(`${apiBaseUrl}${endpoint}`, { headers });
         
         const data = await response.json();
         const orderInfo = data.data || data.order;
