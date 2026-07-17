@@ -58,7 +58,8 @@ export default function AIChatBot() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8001/api/ai/chat", {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const response = await fetch(`${apiBaseUrl}/ai/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
