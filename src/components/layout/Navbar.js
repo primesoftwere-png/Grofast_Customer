@@ -205,11 +205,11 @@ export default function Navbar() {
           
           {/* Logo */}
           <Link href="/" className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <div className="w-24 h-10 sm:w-40 sm:h-14 relative flex items-center justify-center">
+            <div className="w-28 h-12 sm:w-44 sm:h-16 relative flex items-center justify-start ml-1 sm:ml-2">
               <img 
                 src="/grofast.png" 
                 alt="GroFast Logo" 
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain object-left scale-[1.2] sm:scale-[1.5] origin-left"
                 onError={(e) => {
                   e.target.style.display = 'none';
                   e.target.nextElementSibling.style.display = 'flex';

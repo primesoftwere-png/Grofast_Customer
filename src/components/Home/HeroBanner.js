@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Zap, Tag } from "lucide-react";
 
 export default function HeroBanner() {
@@ -53,10 +54,13 @@ export default function HeroBanner() {
               
               <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse-slow" />
 
-              <img
+              <Image
                 src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=400&fit=crop"
                 alt="Fresh groceries basket"
-                className="relative z-10 w-full h-full object-cover rounded-3xl shadow-card-lg animate-bounce-gentle"
+                fill
+                priority
+                className="relative z-10 object-cover rounded-3xl shadow-card-lg animate-bounce-gentle"
+                sizes="(max-width: 768px) 256px, 320px"
               />
 
               {/* Left floating card */}

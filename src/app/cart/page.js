@@ -25,6 +25,7 @@ import AddressModal from "@/components/Cart/AddressModal";
 import { addressAPI } from "@/services/address.api";
 import { orderAPI } from "@/services/order.api";
 import toast from "react-hot-toast";
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 
 export default function Cart() {
   const {
@@ -714,12 +715,7 @@ export default function Cart() {
       <div className="min-h-screen bg-background overflow-x-hidden">
         <Navbar />
         <main className="container mx-auto px-4 py-12">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading your cart...</p>
-            </div>
-          </div>
+          <EcommerceLoader />
         </main>
       </div>
     );

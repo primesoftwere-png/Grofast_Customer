@@ -16,6 +16,7 @@ import {
   FileText
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 import { useOrderTracking } from "@/hooks/useOrderTracking";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
@@ -399,23 +400,7 @@ export default function OrderTracking({ token: propToken }) {
       {/* Loading State - Show while fetching order data */}
       {isLoading && (
         <main className="container mx-auto px-4 py-6 print:py-0 print:px-0 max-w-4xl">
-          <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
-            <div className="relative">
-              <div className="w-20 h-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-transparent border-t-primary/50 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1s' }}></div>
-              </div>
-            </div>
-            <div className="text-center space-y-2">
-              <h2 className="text-xl font-semibold text-foreground">Loading Order Details...</h2>
-              <p className="text-sm text-muted-foreground">Please wait while we fetch your order information</p>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-            </div>
-          </div>
+          <EcommerceLoader />
         </main>
       )}
 

@@ -1,94 +1,106 @@
+'use client';
+
 import React from 'react';
 
-const EcommerceLoader = ({
-  items = [], // Kept for backward compatibility
-  message = 'Processing...',
-  fullScreen = true,
-  overlayColor = 'bg-white/90 dark:bg-gray-900/90',
-  blur = 'backdrop-blur-md',
-}) => {
-  const containerClasses = fullScreen
-    ? `fixed top-0 left-0 w-screen h-screen flex flex-col items-center justify-center z-[99999] ${overlayColor} ${blur} overflow-hidden`
-    : `flex flex-col items-center justify-center w-full h-full min-h-[250px] p-8 ${overlayColor} rounded-2xl`;
-
+const ShoppingCartLoader = () => {
   return (
-    <div className={containerClasses}>
+    <div className="flex items-center justify-center w-full h-screen bg-white overflow-hidden">
+      {/* 
+        Embedded custom CSS keyframes for the specific timing of the animation.
+        This handles the cart moving in, stopping, bags dropping, and moving out.
+      */}
       <style>{`
-        @keyframes floating {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
+        @keyframes cartMove {
+          0% { transform: translateX(-150vw); }
+          25% { transform: translateX(0); }
+          60% { transform: translateX(0); }
+          100% { transform: translateX(150vw); }
         }
-        @keyframes itemDrop {
-          0% { transform: translateY(-40px) scale(0); opacity: 0; }
-          20% { transform: translateY(-20px) scale(1.2); opacity: 1; }
-          80% { transform: translateY(10px) scale(1); opacity: 1; }
-          100% { transform: translateY(20px) scale(0.5); opacity: 0; }
+        @keyframes bagsDrop {
+          0%, 25% { opacity: 0; transform: translateY(-40px); }
+          35% { opacity: 1; transform: translateY(0); }
+          100% { opacity: 1; transform: translateY(0); }
         }
-        @keyframes pulse-shadow {
-          0%, 100% { transform: scale(1); opacity: 0.2; }
-          50% { transform: scale(0.7); opacity: 0.1; }
+        @keyframes linesPulse {
+          0%, 20% { opacity: 1; transform: translateX(0); }
+          25%, 60% { opacity: 0; transform: translateX(20px); }
+          65%, 100% { opacity: 1; transform: translateX(0); }
         }
-        .animate-floating {
-          animation: floating 2s ease-in-out infinite;
+        .animate-cart {
+          animation: cartMove 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
-        .shadow-pulse {
-          animation: pulse-shadow 2s ease-in-out infinite;
+        .animate-bags {
+          animation: bagsDrop 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
-        .drop-1 { animation: itemDrop 1.8s ease-in-out infinite; animation-delay: 0s; }
-        .drop-2 { animation: itemDrop 1.8s ease-in-out infinite; animation-delay: 0.6s; }
-        .drop-3 { animation: itemDrop 1.8s ease-in-out infinite; animation-delay: 1.2s; }
+        .animate-lines {
+          animation: linesPulse 3s ease-in-out infinite;
+        }
       `}</style>
-      
-      <div className="relative flex flex-col items-center justify-center">
-        
-        {/* Animated Objects */}
-        <div className="relative w-32 h-32 flex items-center justify-center animate-floating z-10">
-          
-          {/* Dropping Items */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 flex justify-center w-full h-full z-0">
-            <div className="absolute top-0 w-6 h-6 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-lg drop-1 rotate-12 shadow-md"></div>
-            <div className="absolute top-0 w-5 h-5 bg-gradient-to-br from-orange-400 to-red-500 rounded-full drop-2 -rotate-12 shadow-md ml-8"></div>
-            <div className="absolute top-0 w-7 h-7 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-md drop-3 rotate-45 shadow-md -ml-8"></div>
-          </div>
 
-          {/* Shopping Bag SVG */}
-          <div className="relative mt-10 text-emerald-500 dark:text-emerald-400 z-10 drop-shadow-xl bg-white dark:bg-gray-800 rounded-b-xl">
-            <svg 
-              width="72" 
-              height="72" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="1.5" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            >
-              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" fill="currentColor" fillOpacity="0.1" />
-              <path d="M3 6h18" />
-              <path d="M16 10a4 4 0 0 1-8 0" />
-            </svg>
-          </div>
+      {/* Main Cart Container */}
+      <div className="relative flex items-center animate-cart">
+        
+        {/* Speed Lines */}
+        <div className="absolute -left-16 flex flex-col gap-2 animate-lines z-0">
+          <div className="w-10 h-1.5 bg-[#FFC107] rounded-full ml-4" />
+          <div className="w-14 h-1.5 bg-[#FFC107] rounded-full" />
+          <div className="w-10 h-1.5 bg-[#FFC107] rounded-full ml-2" />
         </div>
 
-        {/* Shadow */}
-        <div className="w-20 h-2.5 bg-emerald-900/30 dark:bg-black/50 rounded-[100%] shadow-pulse mt-6 blur-[2px]"></div>
-
-        {/* Text */}
-        {message && (
-          <div className="mt-8 flex flex-col items-center">
-            <h3 className="text-sm font-bold tracking-[0.2em] uppercase text-emerald-600 dark:text-emerald-400">
-              {message}
-            </h3>
-            <div className="flex gap-1.5 mt-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-bounce" style={{ animationDelay: '300ms' }}></div>
-            </div>
+        {/* Cart & Bags Wrapper */}
+        <div className="relative z-10 w-48 h-48">
+          
+          {/* Bags Group (Drops in when cart stops) */}
+          <div className="absolute bottom-[32%] left-[25%] flex items-end animate-bags z-10">
+            {/* Left White Bag */}
+            <svg className="absolute -left-2 bottom-0 w-12 h-16 translate-x-2 translate-y-1 rotate-[-10deg]" viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 15H35V48H5V15Z" fill="#F3F4F6" stroke="black" strokeWidth="1.5" strokeLinejoin="round"/>
+              <path d="M12 15C12 5 28 5 28 15" stroke="black" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            
+            {/* Right White Bag */}
+            <svg className="absolute left-10 bottom-0 w-10 h-14 -translate-y-2 translate-x-2 rotate-[10deg]" viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 15H35V48H5V15Z" fill="#F3F4F6" stroke="black" strokeWidth="1.5" strokeLinejoin="round"/>
+              <path d="M12 15C12 5 28 5 28 15" stroke="black" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            
+            {/* Center Yellow Bag */}
+            <svg className="absolute left-2 bottom-0 w-14 h-18 z-20" viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 15H35V48H5V15Z" fill="#FFC107" stroke="black" strokeWidth="1.5" strokeLinejoin="round"/>
+              <path d="M12 15C12 5 28 5 28 15" stroke="black" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
           </div>
-        )}
+
+          {/* Cart Structure SVG */}
+          <svg className="absolute inset-0 w-full h-full z-30" viewBox="0 0 120 120" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            {/* Cart Handle & Frame */}
+            <circle cx="22" cy="30" r="2.5" fill="black" />
+            <path d="M 22 30 L 35 55 L 38 85 L 85 85" />
+            <path d="M 35 55 L 98 55 L 88 85" />
+            
+            {/* Basket Vertical Lines */}
+            <line x1="45" y1="55" x2="48" y2="85" />
+            <line x1="55" y1="55" x2="57" y2="85" />
+            <line x1="66" y1="55" x2="67" y2="85" />
+            <line x1="77" y1="55" x2="77" y2="85" />
+            <line x1="88" y1="55" x2="87" y2="85" />
+            
+            {/* Basket Horizontal Lines */}
+            <line x1="36" y1="65" x2="95" y2="65" />
+            <line x1="37" y1="75" x2="91" y2="75" />
+            
+            {/* Left Wheel */}
+            <circle cx="50" cy="98" r="7" fill="white" strokeWidth="2"/>
+            <path d="M 47 95 L 53 101 M 53 95 L 47 101 M 50 93 L 50 103 M 45 98 L 55 98" stroke="black" strokeWidth="1" />
+            
+            {/* Right Wheel */}
+            <circle cx="78" cy="98" r="7" fill="white" strokeWidth="2"/>
+            <path d="M 75 95 L 81 101 M 81 95 L 75 101 M 78 93 L 78 103 M 73 98 L 83 98" stroke="black" strokeWidth="1" />
+          </svg>
+        </div>
       </div>
     </div>
   );
 };
 
-export default EcommerceLoader;
+export default ShoppingCartLoader;

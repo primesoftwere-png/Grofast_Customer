@@ -120,10 +120,10 @@ export default function AIChatBot() {
   return (
     <>
       {/* Floating Action Button */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end">
         {/* Chat Box */}
         {isOpen && (
-          <div className="mb-4 w-[calc(100vw-3rem)] sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col transition-all duration-300 transform origin-bottom-right" style={{ height: '500px', maxHeight: 'calc(100vh - 8rem)' }}>
+          <div className="mb-4 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col transition-all duration-300 transform origin-bottom-right" style={{ height: '500px', maxHeight: 'calc(100vh - 6rem)' }}>
             {/* Header */}
             <div className="bg-primary-600 bg-green-500 text-white p-4 flex justify-between items-center">
               <div className="flex items-center gap-2">
@@ -246,7 +246,7 @@ export default function AIChatBot() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Type your message..."
-                className="flex-1 bg-gray-100 text-sm rounded-full px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                className="flex-1 bg-gray-100 text-base sm:text-sm rounded-full px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500/50"
                 disabled={isLoading}
               />
               <button

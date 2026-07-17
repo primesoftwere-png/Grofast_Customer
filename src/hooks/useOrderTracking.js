@@ -265,71 +265,21 @@ export function useOrderTracking(orderId, orderNumber, initialOrderData = null) 
 
   // ── STEP 3: 5-second polling fallback for live delivery location ──
   // This ensures the map updates every 5s even if socket is slow or silent.
+  // API polling has been removed to prevent infinite API calls,
+  // but socket.io requests are kept intact.
   useEffect(() => {
     if (!orderId) return;
 
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-
-    const pollLocation = async () => {
+    const pollLocation = () => {
       try {
-        const token = localStorage.getItem('token') || '';
-        
-        // Also explicitly request via socket every 5s if connected
+        // Explicitly request via socket every 5s if connected
         if (socketService.isSocketConnected() && orderId) {
           const socket = socketService.getSocket();
           socket.emit('customer:request-location', { orderId, deliveryBoyId: deliveryBoyIdRef.current });
           socket.emit('get-live-location', { orderId, deliveryBoyId: deliveryBoyIdRef.current });
         }
-        
-        // Fetch fresh order details as fallback
-        const endpoint = orderNumber ? `/order/recent/${orderNumber}` : `/order/recent/${orderId}`;
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        
-        const response = await fetch(`${apiBaseUrl}${endpoint}`, { headers });
-        
-        const data = await response.json();
-        const orderInfo = data.data || data.order;
-        if (!orderInfo) return;
-
-        // Extract location precisely as done in seeding
-        const lat = orderInfo.deliveryLocation?.lat || orderInfo.deliveryLocation?.latitude ||
-                   orderInfo.deliveryBoy?.lat || orderInfo.deliveryBoy?.latitude ||
-                   orderInfo.deliveryBoyId?.lat || orderInfo.deliveryBoyId?.latitude ||
-                   orderInfo.location?.lat || orderInfo.location?.latitude ||
-                   orderInfo.lat || orderInfo.latitude;
-                   
-        const lng = orderInfo.deliveryLocation?.lng || orderInfo.deliveryLocation?.longitude ||
-                   orderInfo.deliveryBoy?.lng || orderInfo.deliveryBoy?.longitude ||
-                   orderInfo.deliveryBoyId?.lng || orderInfo.deliveryBoyId?.longitude ||
-                   orderInfo.location?.lng || orderInfo.location?.longitude ||
-                   orderInfo.lng || orderInfo.longitude;
-
-        if (lat && lng) {
-          const parsedLat = parseFloat(lat);
-          const parsedLng = parseFloat(lng);
-          if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
-            setDeliveryLocation(prev => {
-              // Only update if location changed to prevent unnecessary re-renders
-              if (prev && prev.lat === parsedLat && prev.lng === parsedLng) return prev;
-              
-              console.log('📍 [POLL] Delivery location updated:', { lat: parsedLat, lng: parsedLng });
-              return { 
-                lat: parsedLat, 
-                lng: parsedLng,
-                timestamp: new Date().toISOString(),
-                source: 'poll'
-              };
-            });
-          }
-        }
-        
-        // Also update status if changed
-        if (orderInfo.orderStatus) {
-            setOrderStatus(orderInfo.orderStatus);
-        }
       } catch (err) {
-        console.error('Polling location failed:', err);
+        console.error('Socket polling location failed:', err);
       }
     };
 
