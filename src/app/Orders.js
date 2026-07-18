@@ -14,6 +14,7 @@ import {
 import Navbar from "@/components/layout/Navbar";
 import socketService from "@/services/socket.service";
 import toast from "react-hot-toast";
+import EcommerceLoader from "@/components/common/EcommerceLoader";
 
 /* ================= STATUS CONFIG ================= */
 
@@ -79,8 +80,9 @@ function OrderCard({ order }) {
         </div>
 
         <span
-          className={`px-3 py-1 rounded-full text-xs font-medium ${status.className}`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold shadow-sm ${status.className}`}
         >
+          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-75"></span>
           {status.label}
         </span>
       </div>
@@ -186,7 +188,7 @@ function OrderDetail({ token }) {
       <div className="min-h-screen bg-background">
         <Navbar />
         <main className="container mx-auto px-4 py-12 flex justify-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <EcommerceLoader />
         </main>
       </div>
     );
@@ -230,7 +232,8 @@ function OrderDetail({ token }) {
         
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Order Details</h1>
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${status.className}`}>
+          <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold shadow-sm ${status.className}`}>
+            <span className="w-2 h-2 rounded-full bg-current opacity-75"></span>
             {status.label}
           </span>
         </div>
@@ -489,7 +492,7 @@ export default function OrdersPage({ token }) {
         {/* Content */}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <EcommerceLoader />
           </div>
         ) : (
           <div className="space-y-4">

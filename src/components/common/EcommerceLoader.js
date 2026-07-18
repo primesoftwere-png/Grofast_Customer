@@ -4,7 +4,7 @@ import React from 'react';
 
 const ShoppingCartLoader = () => {
   return (
-    <div className="flex items-center justify-center w-full h-screen bg-white overflow-hidden">
+    <div className="flex items-center justify-center w-full h-full min-h-[400px] bg-transparent overflow-hidden">
       {/* 
         Embedded custom CSS keyframes for the specific timing of the animation.
         This handles the cart moving in, stopping, bags dropping, and moving out.

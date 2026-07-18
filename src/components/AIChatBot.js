@@ -240,14 +240,14 @@ export default function AIChatBot() {
             )}
 
             {/* Input Area */}
-            <div className="p-4 bg-white border-t border-gray-100 flex gap-2 items-center">
+            <div className="p-3 sm:p-4 bg-white border-t border-gray-100 flex gap-2 items-center w-full">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Type your message..."
-                className="flex-1 bg-gray-100 text-base sm:text-sm rounded-full px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                className="flex-1 min-w-0 bg-gray-100 text-base sm:text-sm rounded-full px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500/50"
                 disabled={isLoading}
               />
               <button

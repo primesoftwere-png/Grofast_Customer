@@ -293,7 +293,7 @@ export default function OrderTracking({ token: propToken }) {
     return `${serverUrl}/${cleanUrl}`;
   };
 
-  const riderImage = getImageUrl(displayRider?.profileImage) || "/delivery_boy.jpg";
+  const riderImage = getImageUrl(displayRider?.profileImage) || "/delivery_boy.png";
 
   const handleDownloadInvoice = async () => {
     try {

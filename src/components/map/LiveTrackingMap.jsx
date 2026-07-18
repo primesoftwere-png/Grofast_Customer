@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -28,14 +28,32 @@ const createCustomIcon = (color) => {
   });
 };
 
-const shopIcon = createCustomIcon("#22c55e"); // Green (primary)
-const customerIcon = createCustomIcon("#000000"); // Black
+const shopIcon = L.icon({
+  className: 'custom-leaflet-icon shop-marker',
+  iconUrl: '/shop.png',
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+  popupAnchor: [0, -20]
+});
+const customerIcon = L.divIcon({
+  className: 'custom-leaflet-icon',
+  html: `<div class="current-location-marker">
+           <div class="pulse-ring"></div>
+           <div class="core-dot"></div>
+         </div>`,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12]
+});
 
 // Component to dynamically adjust map bounds
 function MapUpdater({ liveLocation, shopLocation, customerLocation }) {
   const map = useMap();
+  const hasFittedBounds = useRef(false);
   
   useEffect(() => {
+    // Only fit bounds on initial load so the map doesn't violently snap every 5 seconds
+    if (hasFittedBounds.current) return;
+
     const points = [];
     
     if (liveLocation?.lat && liveLocation?.lng) {
@@ -53,6 +71,7 @@ function MapUpdater({ liveLocation, shopLocation, customerLocation }) {
     if (points.length === 1) {
       // Single point – just centre on it
       map.setView(points[0], 15);
+      if (liveLocation?.lat) hasFittedBounds.current = true;
       return;
     }
 
@@ -64,11 +83,15 @@ function MapUpdater({ liveLocation, shopLocation, customerLocation }) {
 
     if (allSame) {
       map.setView(points[0], 15);
+      if (liveLocation?.lat || points.length >= 2) hasFittedBounds.current = true;
       return;
     }
 
     const bounds = L.latLngBounds(points);
     map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
+    if (liveLocation?.lat || points.length >= 2) {
+      hasFittedBounds.current = true;
+    }
   }, [map, liveLocation, shopLocation, customerLocation]);
 
   return null;
@@ -123,21 +146,57 @@ export default function LiveTrackingMap({ liveLocation, shopLocation, customerLo
 
   console.log('🎯 Map Center:', initialCenter);
 
-  const deliveryIcon = useMemo(() => L.divIcon({
-    className: 'custom-leaflet-icon',
-    html: `<div style="position: relative; display: flex; flex-direction: column; align-items: center;">
-      <div style="width: 46px; height: 46px; border-radius: 50%; border: 3px solid #f97316; box-shadow: 0 4px 10px rgba(0,0,0,0.3); overflow: hidden; display: flex; align-items: center; justify-content: center; background-color: white; position: relative; z-index: 2;">
-        <img src="${deliveryBoyImage || '/delivery_boy.jpg'}" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;" alt="Delivery Partner" />
-      </div>
-      <div style="width: 14px; height: 14px; background-color: #f97316; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%) rotate(45deg); z-index: 1;"></div>
-    </div>`,
-    iconSize: [46, 52],
-    iconAnchor: [23, 52],
-    popupAnchor: [0, -52]
-  }), [deliveryBoyImage]);
+  const deliveryIcon = useMemo(() => L.icon({
+    className: 'custom-leaflet-icon delivery-marker',
+    iconUrl: '/delivery_boy.png',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -20]
+  }), []);
 
   return (
     <div style={{ height: "100%", width: "100%", zIndex: 0 }}>
+      <style>{`
+        .delivery-marker {
+          transition: transform 1s linear !important;
+        }
+        .current-location-marker {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+        }
+        .core-dot {
+          width: 16px;
+          height: 16px;
+          background-color: #0ea5e9;
+          border-radius: 50%;
+          border: 2.5px solid white;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+          z-index: 2;
+        }
+        .pulse-ring {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(14, 165, 233, 0.4);
+          border-radius: 50%;
+          z-index: 1;
+          animation: pulse-ring 2s infinite ease-out;
+        }
+        @keyframes pulse-ring {
+          0% {
+            transform: scale(0.8);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(2.5);
+            opacity: 0;
+          }
+        }
+      `}</style>
       <MapContainer 
         center={initialCenter} 
         zoom={13} 
@@ -151,18 +210,21 @@ export default function LiveTrackingMap({ liveLocation, shopLocation, customerLo
         
         {shopLocation?.lat && shopLocation?.lng && (
           <Marker position={[shopLocation.lat, shopLocation.lng]} icon={shopIcon}>
+            <Tooltip direction="top" offset={[0, -10]} opacity={1}>Shop Location</Tooltip>
             <Popup>Shop Location</Popup>
           </Marker>
         )}
         
         {customerLocation?.lat && customerLocation?.lng && (
           <Marker position={[customerLocation.lat, customerLocation.lng]} icon={customerIcon}>
+            <Tooltip direction="top" offset={[0, -10]} opacity={1}>Your Location</Tooltip>
             <Popup>Delivery Destination</Popup>
           </Marker>
         )}
         
         {liveLocation?.lat && liveLocation?.lng && (
           <Marker position={[liveLocation.lat, liveLocation.lng]} icon={deliveryIcon}>
+            <Tooltip direction="top" offset={[0, -20]} opacity={1}>Delivery Partner</Tooltip>
             <Popup>Delivery Partner (Live)</Popup>
           </Marker>
         )}
