@@ -434,7 +434,7 @@ export default function OrderTracking({ token: propToken }) {
         {/* Map and Delivery Info */}
         {(currentStatusDisplay === 'OUT_FOR_DELIVERY') && (
           <>
-            <div className="relative rounded-3xl overflow-hidden bg-muted h-64 md:h-80 mb-4 shadow z-0 print:hidden">
+            <div className="relative rounded-3xl overflow-hidden bg-muted h-[250px] sm:h-[300px] md:h-[320px] mb-4 shadow z-0 print:hidden">
               
               <LiveTrackingMap 
                 liveLocation={deliveryLocation || null}
@@ -444,45 +444,47 @@ export default function OrderTracking({ token: propToken }) {
               />
 
               {/* Rider Card */}
-              <div className="absolute bottom-4 left-4 right-4 z-[1000]">
-                <div className="bg-white/90 rounded-xl p-4 flex justify-between items-center shadow">
+              <div className="absolute bottom-2 sm:bottom-4 left-2 right-2 sm:left-4 sm:right-4 z-[1000]">
+                <div className="bg-white/95 backdrop-blur-sm rounded-xl p-3 sm:p-4 flex justify-between items-center shadow-lg border border-white/20">
                   
-                  <div className="flex gap-3 items-center">
+                  <div className="flex gap-2 sm:gap-3 items-center flex-1 min-w-0">
                     <img
                       src={riderImage}
-                      className="w-12 h-12 rounded-full object-contain bg-white p-1"
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover bg-muted p-0.5 shrink-0"
                       alt="Delivery Partner"
                     />
-                    <div className="flex-1">
-                      <p className="font-semibold text-lg">{displayRider?.name || displayRider?.fullName || displayRider?.fullname || "Assigning Rider..."}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm sm:text-lg text-foreground truncate">
+                        {displayRider?.name || displayRider?.fullName || displayRider?.fullname || "Assigning Rider..."}
+                      </p>
                       
                       {displayRider && (displayRider.vehicleType || displayRider.vehicleNumber) && (
-                        <p className="text-sm text-gray-600 font-medium">
+                        <p className="text-xs sm:text-sm text-muted-foreground font-medium truncate">
                           {displayRider.vehicleType ? displayRider.vehicleType.charAt(0).toUpperCase() + displayRider.vehicleType.slice(1) : ''} 
                           {displayRider.vehicleNumber ? ` • ${displayRider.vehicleNumber}` : ''}
                         </p>
                       )}
                       
-                      <p className="text-sm text-primary font-bold mt-0.5">
+                      <p className="text-xs sm:text-sm text-primary font-bold mt-0.5 truncate">
                         {displayRider ? (['IN_TRANSIT', 'ON_THE_WAY', 'PICKED_UP', 'OUT_FOR_DELIVERY'].includes(rawStatus) ? 'On the way' : 'Assigned') : 'Finding delivery partner'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 shrink-0 ml-2">
                     {displayRider?.phone ? (
-                      <a href={`tel:${displayRider.phone}`} className="p-2 bg-secondary rounded-full hover:bg-secondary/80 transition flex items-center justify-center">
-                        <Phone className="w-5 h-5" />
+                      <a href={`tel:${displayRider.phone}`} className="p-2 sm:p-2.5 bg-primary/10 text-primary rounded-full hover:bg-primary hover:text-white transition-colors flex items-center justify-center">
+                        <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
                       </a>
                     ) : (
-                      <button className="p-2 bg-secondary rounded-full hover:bg-secondary/80 transition opacity-50 cursor-not-allowed">
-                        <Phone className="w-5 h-5" />
+                      <button className="p-2 sm:p-2.5 bg-secondary rounded-full hover:bg-secondary/80 transition opacity-50 cursor-not-allowed">
+                        <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                     )}
 
                     <Link href={`/chat/delivery/${displayRider?._id || displayRider?.id || 'd1'}`}>
-                      <button className="p-2 bg-secondary rounded-full hover:bg-secondary/80 transition">
-                        <MessageCircle className="w-5 h-5" />
+                      <button className="p-2 sm:p-2.5 bg-primary/10 text-primary rounded-full hover:bg-primary hover:text-white transition-colors">
+                        <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                     </Link>
                   </div>
@@ -490,49 +492,7 @@ export default function OrderTracking({ token: propToken }) {
               </div>
             </div>
 
-            {/* Live Location Debug Panel – for mobile testing */}
-            <div className="rounded-xl mb-4 border border-primary/20 bg-primary/5 print:hidden overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-2 bg-primary/10 border-b border-primary/20">
-                <span className="text-xs font-bold text-primary uppercase tracking-wider">📍 Live Location Debug</span>
-                <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
-                  <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                  Updates every 5s
-                </span>
-              </div>
-              <div className="px-4 py-3 space-y-1.5 font-mono text-xs">
-                <div className="flex gap-2 items-start">
-                  <span className="text-orange-500 font-bold shrink-0">🚴 Rider:</span>
-                  <span className="text-foreground break-all">
-                    {deliveryLocation
-                      ? `${deliveryLocation.lat.toFixed(7)}, ${deliveryLocation.lng.toFixed(7)}`
-                      : <span className="text-muted-foreground italic">Waiting for rider location…</span>}
-                  </span>
-                </div>
-                <div className="flex gap-2 items-start">
-                  <span className="text-green-600 font-bold shrink-0">🏪 Shop:</span>
-                  <span className="text-foreground break-all">
-                    {getShopLocation()
-                      ? `${getShopLocation().lat.toFixed(7)}, ${getShopLocation().lng.toFixed(7)}`
-                      : <span className="text-muted-foreground italic">Not available</span>}
-                  </span>
-                </div>
-                <div className="flex gap-2 items-start">
-                  <span className="text-blue-500 font-bold shrink-0">🏠 You:</span>
-                  <span className="text-foreground break-all">
-                    {getCustomerLocation()
-                      ? `${getCustomerLocation().lat.toFixed(7)}, ${getCustomerLocation().lng.toFixed(7)}`
-                      : <span className="text-muted-foreground italic">Not available</span>}
-                  </span>
-                </div>
-                {deliveryLocation?.timestamp && (
-                  <div className="flex gap-2 items-center pt-1 border-t border-primary/10">
-                    <span className="text-muted-foreground shrink-0">⏰ Last update:</span>
-                    <span className="text-muted-foreground">{new Date(deliveryLocation.timestamp).toLocaleTimeString()}</span>
-                    {deliveryLocation.source === 'poll' && <span className="text-xs text-blue-400">(poll)</span>}
-                  </div>
-                )}
-              </div>
-            </div>
+
 
             {/* Delivery OTP */}
             {displayOtp && currentStatusDisplay !== 'DELIVERED' && (
@@ -687,8 +647,16 @@ export default function OrderTracking({ token: propToken }) {
               {/* Items */}
               {orderData.items && orderData.items.map((item, index) => (
                 <div key={index} className="flex gap-3">
-                  <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center text-xs font-medium">
-                    {item.productName?.substring(0, 2).toUpperCase()}
+                  <div className="w-12 h-12 bg-muted rounded-lg overflow-hidden flex items-center justify-center text-xs font-medium shrink-0 border border-border">
+                    {item.image || item.productImage || item.imageUrl || item.product?.image || item.product?.images?.[0] || item.productImageId?.image ? (
+                      <img 
+                        src={getImageUrl(item.image || item.productImage || item.imageUrl || item.product?.image || item.product?.images?.[0] || item.productImageId?.image)} 
+                        alt={item.productName} 
+                        className="w-full h-full object-cover" 
+                      />
+                    ) : (
+                      item.productName?.substring(0, 2).toUpperCase()
+                    )}
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">

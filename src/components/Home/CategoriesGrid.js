@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { categoryAPI } from "@/services/category.api";
 
 // Default category icons mapping
@@ -26,6 +27,7 @@ export default function CategoriesGrid({
   selectedCategory,
   onSelectCategory,
 }) {
+  const router = useRouter();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -118,18 +120,7 @@ export default function CategoriesGrid({
             key={`${category._id}-${index}`}
             onClick={(e) => {
               e.preventDefault();
-              if (selectedCategory === category._id) {
-                onSelectCategory(null);
-              } else {
-                onSelectCategory(category._id);
-                // Scroll to products section
-                setTimeout(() => {
-                  const productsSection = document.getElementById('products');
-                  if (productsSection) {
-                    productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }
-                }, 100);
-              }
+              router.push(`/category/${category._id}`);
             }}
             className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-background hover:bg-muted transition-all group animate-fade-in ${
               selectedCategory === category._id

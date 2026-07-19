@@ -32,6 +32,16 @@ export default function Navbar() {
   const [currentAddress, setCurrentAddress] = useState("Select Address");
   const [currentAddressId, setCurrentAddressId] = useState(null);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith("http") || imagePath.startsWith("blob:")) return imagePath;
+    const cleanPath = imagePath.replace(/^[/\\]+/, "");
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const baseUrl = apiBase.replace(/\/api\/?$/, "");
+    return `${baseUrl}/${cleanPath.startsWith("uploads/") ? cleanPath : `uploads/${cleanPath}`}`;
+  };
 
   const { totalItems } = useCart();
 
@@ -255,8 +265,17 @@ export default function Navbar() {
                   onClick={() => router.push('/profile')}
                   className="flex items-center gap-1.5 sm:gap-2.5 bg-white/10 hover:bg-white/25 text-white px-1.5 sm:px-3 py-1.5 rounded-full transition-all duration-300 border border-white/20 shadow-sm hover:scale-105 active:scale-95 transform"
                 >
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 bg-white text-primary rounded-full flex items-center justify-center font-bold text-xs sm:text-sm">
-                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 bg-white text-primary rounded-full flex items-center justify-center font-bold text-xs sm:text-sm overflow-hidden">
+                    {(user?.profileImage || user?.avatar) && !imageError ? (
+                      <img 
+                        src={getImageUrl(user.profileImage || user.avatar)} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                        onError={() => setImageError(true)}
+                      />
+                    ) : (
+                      user?.name ? user.name.charAt(0).toUpperCase() : 'U'
+                    )}
                   </div>
                   <span className="hidden sm:inline font-semibold text-sm max-w-[100px] truncate">{user?.name?.split(' ')[0] || 'User'}</span>
                 </button>
@@ -292,8 +311,17 @@ export default function Navbar() {
                 {isLoggedIn && user && (
                   <div className="mb-4 p-4 bg-primary/10 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center shrink-0">
-                        <User className="w-6 h-6 text-white" />
+                      <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center shrink-0 overflow-hidden">
+                        {(user?.profileImage || user?.avatar) && !imageError ? (
+                          <img 
+                            src={getImageUrl(user.profileImage || user.avatar)} 
+                            alt="Profile" 
+                            className="w-full h-full object-cover"
+                            onError={() => setImageError(true)}
+                          />
+                        ) : (
+                          <User className="w-6 h-6 text-white" />
+                        )}
                       </div>
                       <div className="min-w-0">
                         <p className="font-semibold text-gray-800 truncate">{user.name}</p>
@@ -463,8 +491,19 @@ export default function Navbar() {
           {/* Mobile Auth Icon */}
           {isLoggedIn ? (
             <Link href="/profile" className="sm:hidden shrink-0">
-              <button className="text-primary-foreground hover:bg-primary-foreground/10 p-1 rounded">
-                <User className="w-5 h-5" />
+              <button className="text-primary-foreground hover:bg-primary-foreground/10 p-1 rounded flex items-center justify-center">
+                {(user?.profileImage || user?.avatar) && !imageError ? (
+                  <div className="w-6 h-6 rounded-full overflow-hidden border border-white/20">
+                    <img 
+                      src={getImageUrl(user.profileImage || user.avatar)} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                      onError={() => setImageError(true)}
+                    />
+                  </div>
+                ) : (
+                  <User className="w-5 h-5" />
+                )}
               </button>
             </Link>
           ) : (

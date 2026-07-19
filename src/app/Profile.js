@@ -33,6 +33,16 @@ export default function Profile() {
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [newAddress, setNewAddress] = useState("");
   const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith("http") || imagePath.startsWith("blob:")) return imagePath;
+    const cleanPath = imagePath.replace(/^[/\\]+/, "");
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const baseUrl = apiBase.replace(/\/api\/?$/, "");
+    return `${baseUrl}/${cleanPath.startsWith("uploads/") ? cleanPath : `uploads/${cleanPath}`}`;
+  };
 
   // Fetch user profile on mount
   useEffect(() => {
@@ -165,8 +175,17 @@ export default function Profile() {
           <div className="flex gap-4 items-center">
             
             <div className="relative">
-              <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center">
-                <User className="w-10 h-10 text-primary" />
+              <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center overflow-hidden">
+                {(user.profileImage || user.avatar) && !imageError ? (
+                  <img 
+                    src={getImageUrl(user.profileImage || user.avatar)} 
+                    className="w-full h-full object-cover" 
+                    alt="Profile"
+                    onError={() => setImageError(true)}
+                  />
+                ) : (
+                  <User className="w-10 h-10 text-primary" />
+                )}
               </div>
 
               <Link

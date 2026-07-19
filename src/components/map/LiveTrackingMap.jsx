@@ -146,13 +146,15 @@ export default function LiveTrackingMap({ liveLocation, shopLocation, customerLo
 
   console.log('🎯 Map Center:', initialCenter);
 
-  const deliveryIcon = useMemo(() => L.icon({
+  const getDeliveryIcon = (heading = 0) => L.divIcon({
     className: 'custom-leaflet-icon delivery-marker',
-    iconUrl: '/delivery_boy.png',
+    html: `<div style="transform: rotate(${heading}deg); transition: transform 0.5s linear; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+             <img src="/delivery_boy.png" style="width: 100%; height: 100%; object-fit: contain;" alt="Delivery Partner" />
+           </div>`,
     iconSize: [40, 40],
     iconAnchor: [20, 20],
     popupAnchor: [0, -20]
-  }), []);
+  });
 
   return (
     <div style={{ height: "100%", width: "100%", zIndex: 0 }}>
@@ -223,7 +225,7 @@ export default function LiveTrackingMap({ liveLocation, shopLocation, customerLo
         )}
         
         {liveLocation?.lat && liveLocation?.lng && (
-          <Marker position={[liveLocation.lat, liveLocation.lng]} icon={deliveryIcon}>
+          <Marker position={[liveLocation.lat, liveLocation.lng]} icon={getDeliveryIcon(liveLocation.heading || 0)}>
             <Tooltip direction="top" offset={[0, -20]} opacity={1}>Delivery Partner</Tooltip>
             <Popup>Delivery Partner (Live)</Popup>
           </Marker>
